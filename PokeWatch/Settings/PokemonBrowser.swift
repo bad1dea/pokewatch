@@ -102,7 +102,7 @@ private struct Thumbnail: View {
     let fallback: CharacterDefinition
 
     var body: some View {
-        if let image = ThumbnailCache.image(id: id, style: style) {
+        if let image = StillCache.image(id: id, style: style) {
             Image(decorative: image, scale: 1)
                 .resizable()
                 .interpolation(.none)
@@ -114,17 +114,3 @@ private struct Thumbnail: View {
     }
 }
 
-private enum ThumbnailCache {
-    private static let cache = NSCache<NSString, CGImageBox>()
-
-    final class CGImageBox { let image: CGImage; init(_ i: CGImage) { image = i } }
-
-    static func image(id: String, style: SpriteStyle) -> CGImage? {
-        let key = "\(style.rawValue)/\(id)" as NSString
-        if let hit = cache.object(forKey: key) { return hit.image }
-        guard let url = SpriteFiles.stillURL(id: id, style: style, shiny: false),
-              let image = SpriteFiles.loadImage(url) else { return nil }
-        cache.setObject(CGImageBox(image), forKey: key)
-        return image
-    }
-}

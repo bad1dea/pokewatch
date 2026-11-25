@@ -118,6 +118,12 @@ final class SpriteLibrary: @unchecked Sendable {
         return clips.count
     }
 
+    /// Forget cached clips and file lookups (after a sprite pack was installed or removed).
+    func reset() {
+        lock.lock(); defer { lock.unlock() }
+        clips.removeAll(); order.removeAll(); existence.removeAll()
+    }
+
     /// Shiny sprites are not bundled in the watch app (size cap); a companion app may add them later.
     var hasShinyArt: Bool {
         lock.lock(); defer { lock.unlock() }

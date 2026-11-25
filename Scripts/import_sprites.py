@@ -216,7 +216,7 @@ def main():
         return sum(f.stat().st_size for f in folder.rglob("*") if f.is_file()) / 1e6
     total = megabytes(a.out) + megabytes(a.stills)
     print(f"sprites {megabytes(a.out):.1f} MB, stills {megabytes(a.stills):.1f} MB")
-    if total > a.max_mb:
+    if a.max_mb and total > a.max_mb:
         print(f"TOO LARGE: {total:.1f} MB > {a.max_mb} MB budget (Apple caps watch apps at 75 MB)", file=sys.stderr)
         raise SystemExit(2)
     print(f"{len(tasks) - len(missing) - len(failures)} imported, {len(missing)} missing upstream, "

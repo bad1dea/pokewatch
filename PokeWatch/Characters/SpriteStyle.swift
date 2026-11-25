@@ -62,10 +62,19 @@ struct ArtChoice: Equatable, Sendable {
 /// Locates imported sprite files. Paths: `ImportedSprites/<style>/<id>/<variant>/`
 /// (animations, app) and `ImportedStills/<style>/<id>/<variant>.png` (first frames, widgets).
 enum SpriteFiles {
+    /// Sprite folders installed after the app (packs sent from the iPhone), searched before the
+    /// bundle. Each root contains `<style>/<id>/<variant>/`.
+    nonisolated(unsafe) static var extraRoots: [URL] = []
+
     static func animationDirectory(id: String, style: SpriteStyle, shiny: Bool, bundle: Bundle = .main) -> URL? {
-        guard let root = bundle.resourceURL?.appendingPathComponent("ImportedSprites", isDirectory: true) else { return nil }
-        let dir = root.appendingPathComponent("\(style.rawValue)/\(id)/\(shiny ? "shiny" : "normal")", isDirectory: true)
-        return FileManager.default.fileExists(atPath: dir.appendingPathComponent("manifest.json").path) ? dir : nil
+        let sub = "\(style.rawValue)/\(id)/\(shiny ? "shiny" : "normal")"
+        var roots = extraRoots
+        if let root = bundle.resourceURL?.appendingPathComponent("ImportedSprites", isDirectory: true) { roots.append(root) }
+        for root in roots {
+            let dir = root.appendingPathComponent(sub, isDirectory: true)
+            if FileManager.default.fileExists(atPath: dir.appendingPathComponent("manifest.json").path) { return dir }
+        }
+        return nil
     }
 
     /// Bundles that carry `ImportedStills`: the main bundle (widget extension) and, from the app,

@@ -17,17 +17,25 @@ jobs:
           sudo xcode-select -switch "$xc"
           xcodebuild -version
       - run: brew install xcodegen
-      - name: Import sprites
-        # Game sprites are fetched at build time and never committed (see Scripts/import_sprites.py).
+      - uses: actions/cache@v4
+        with:
+          path: build/SpriteSource
+          key: sprite-source-${{ hashFiles('Scripts/import_sprites.py') }}
+          restore-keys: sprite-source-
+      - name: Import sprites and make icons
+        # Game sprites and icons made from them are fetched at build time and never committed.
         run: |
           python3 -m venv "$RUNNER_TEMP/venv"
           "$RUNNER_TEMP/venv/bin/pip" install --quiet Pillow
-          "$RUNNER_TEMP/venv/bin/python" Scripts/import_sprites.py
+          PYTHON="$RUNNER_TEMP/venv/bin/python" Scripts/import_all.sh
       - run: xcodegen generate --spec project.yml
-      - name: Build for the watch simulator
+      - name: Build the iPhone and watch apps for the simulators
         run: |
           xcodebuild -project PokeWatch.xcodeproj -scheme PokeWatch -configuration Debug \
             -destination 'generic/platform=watchOS Simulator' -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO build
+          xcodebuild -project PokeWatch.xcodeproj -scheme PokeWatchPhone -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO build
       - name: Unit tests (when a watchOS simulator runtime is installed)
         run: |

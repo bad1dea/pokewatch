@@ -4,10 +4,10 @@ default_platform(:ios)
 # keychain, and the Release config in project.yml names the profiles. The App Store Connect key registers the
 # bundle ids, uploads, and hands the build to testers.
 #
-# PokéWatch is a watch-only app. App Store Connect files it under an iOS app record; testers install it from
-# TestFlight on the paired iPhone, which pushes it to the watch.
+# PokéWatch is an iPhone app carrying a watch app (which also runs on its own). Testers install it from
+# TestFlight on the iPhone; the watch app installs from there.
 
-# The App Store record belongs to the container; the watch app and its widget extension live inside it.
+# The App Store record belongs to the iPhone app; the watch app and its widget extension live inside it.
 APP_ID = "ng.khuo.pokewatch".freeze
 WATCH_ID = "ng.khuo.pokewatch.watchkitapp".freeze
 WIDGET_ID = "ng.khuo.pokewatch.watchkitapp.widgets".freeze
@@ -163,7 +163,7 @@ platform :ios do
     team = ENV.fetch("DEVELOPMENT_TEAM")
     build_app(
       project: project,
-      scheme: "PokeWatchContainer",
+      scheme: "PokeWatchPhone",
       configuration: "Release",
       destination: "generic/platform=iOS",
       export_method: "app-store",

@@ -2,9 +2,9 @@
 
 ## TestFlight (main route)
 
-PokéWatch is watch-only. App Store Connect only accepts it inside Apple's watch-only container (target
-`PokeWatchContainer`, an empty iOS wrapper with the watch app in `Watch/`), filed under an iOS app record.
-TestFlight on the paired iPhone installs it on the watch; nothing appears on the iPhone home screen.
+PokéWatch is an iPhone app (`PokeWatchPhone`) carrying the watch app in `Watch/`. TestFlight installs the
+iPhone app; the watch app installs from it (automatically, or from the Watch app's Available Apps). The watch
+app runs on its own without the iPhone.
 
 One-time setup:
 
@@ -22,6 +22,18 @@ One-time setup:
 Each release: **Actions › TestFlight › Run workflow**. It builds with Xcode 27 on the `xcode-27`
 runner, uploads, waits for processing and adds the build to the internal group. On the iPhone:
 TestFlight › PokéWatch › Install, and the app appears on the watch.
+
+## What's left for you on Apple's side
+
+Nothing is required for internal TestFlight: the bundle ids, HealthKit capability, profiles and the app
+record already exist, and the iPhone app reuses the record's bundle id (`ng.khuo.pokewatch`).
+
+- **TestFlight**: run Actions › TestFlight. Install PokéWatch on the iPhone from TestFlight; the watch app
+  installs from it (or from the Watch app › Available Apps).
+- **Optional, App Store Connect › App Information**: subtitle, category (Lifestyle), and the Watch and
+  iPhone screenshots if you want them in TestFlight's listing.
+- **Not recommended: App Store release.** The game sprites and Pokémon names are Nintendo's; App Review
+  rejects apps using third-party IP without permission (guideline 5.2). Keep it to internal TestFlight.
 
 ## Xcode (development)
 

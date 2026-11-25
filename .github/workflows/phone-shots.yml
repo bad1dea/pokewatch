@@ -1,0 +1,60 @@
+name: iPhone Duo screenshots
+
+# Boots the iPhone Duo simulator and captures every tab of the iPhone app in portrait and landscape,
+# on each screen the simulator reports (front and unfolded). Download the "phone-shots" artifact.
+on:
+  workflow_dispatch:
+
+jobs:
+  shots:
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v5
+      - name: Select Xcode
+        run: |
+          xc="$(ls -d /Applications/Xcode_27*.app | sort -V | tail -1)"
+          sudo xcode-select -switch "$xc"
+          xcodebuild -version
+      - run: brew install xcodegen
+      - uses: actions/cache@v4
+        with:
+          path: build/SpriteSource
+          key: sprite-source-${{ hashFiles('Scripts/import_sprites.py') }}
+          restore-keys: sprite-source-
+      - name: Import sprites and make icons
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet Pillow
+          PYTHON="$RUNNER_TEMP/venv/bin/python" Scripts/import_all.sh
+      - name: Find the Duo
+        run: |
+          xcrun simctl list devicetypes | tee devicetypes.txt
+          xcrun simctl list runtimes | tee runtimes.txt
+          type="$(grep -i 'duo' devicetypes.txt | head -1 | sed -E 's/.*\((com\.apple[^)]*)\).*/\1/')"
+          test -n "$type"
+          # The Duo has its own runtime build; the general ones refuse it as incompatible.
+          udid=""
+          for runtime in $(grep -E '^iOS 27' runtimes.txt | sed -E 's/.* - (com\.apple\.CoreSimulator\.SimRuntime\.[^ ]*).*/\1/' | sort -r); do
+            udid="$(xcrun simctl create Duo "$type" "$runtime" 2>/dev/null)" && { echo "runtime=$runtime"; break; }
+          done
+          test -n "$udid"
+          echo "UDID=$udid" >> "$GITHUB_ENV"
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          xcrun simctl status_bar "$udid" override --time 9:41 --batteryState charged --batteryLevel 100 || true
+      - name: Screenshots
+        run: |
+          xcodegen generate --spec project.yml
+          xcodebuild test -project PokeWatch.xcodeproj -scheme PokeWatchPhone -destination "id=$UDID" \
+            -derivedDataPath build/dd -resultBundlePath build/duo.xcresult \
+            CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO 2>&1 | grep -E "error:|Test Case|\*\*" || true
+      - name: Export screenshots
+        if: always()
+        run: |
+          mkdir -p shots
+          xcrun xcresulttool export attachments --path build/duo.xcresult --output-path shots || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phone-shots
+          path: shots

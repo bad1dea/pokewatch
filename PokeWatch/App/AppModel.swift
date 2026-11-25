@@ -14,6 +14,10 @@ final class AppModel {
     let health: HealthService
     let registry: CharacterRegistry
     let launch: LaunchOptions
+    let sync = SyncService()
+    /// Sprite packs installed from the iPhone.
+    private(set) var installedPacks: [SpritePackKind] = []
+    private(set) var installingPack: SpritePackKind?
 
     /// When the most recent wake-up animation started (wrist raise / AOD exit / launch).
     private(set) var wakeStart: Date?
@@ -34,6 +38,45 @@ final class AppModel {
         health = HealthService(demo: launch.demo ? .demo : nil)
         registry = .shared
         if !registry.contains(settings.characterID) { settings.characterID = registry.characters.first?.id ?? "pikachu" }
+        installedPacks = SpritePackStore.installed
+        SpriteFiles.extraRoots = SpritePackStore.spriteRoots
+        connectPhone()
+    }
+
+    // MARK: - iPhone link
+
+    private func connectPhone() {
+        guard !launch.demo else { return }
+        settings.onLocalChange = { [weak self] in self?.publishToPhone() }
+        sync.onSettings = { [weak self] payload in
+            guard let self, self.settings.apply(syncPayload: payload) else { return }
+            self.wake()
+            self.refreshComplications(force: true)
+        }
+        sync.onPack = { [weak self] kind, file in self?.install(pack: kind, from: file) }
+        sync.activate()
+        publishToPhone()
+    }
+
+    private func publishToPhone() {
+        sync.publish(settings: settings.syncPayload, installedPacks: installedPacks)
+    }
+
+    private func install(pack kind: SpritePackKind, from file: URL) {
+        installingPack = kind
+        Task.detached(priority: .utility) {
+            let result = Result { try SpritePackStore.install(archive: file, kind: kind) }
+            try? FileManager.default.removeItem(at: file)
+            await MainActor.run {
+                self.installingPack = nil
+                if case .success = result {
+                    self.installedPacks = SpritePackStore.installed
+                    SpriteFiles.extraRoots = SpritePackStore.spriteRoots
+                    SpriteLibrary.shared.reset()
+                    self.publishToPhone()
+                }
+            }
+        }
     }
 
     var character: CharacterDefinition { registry.character(settings.characterID) }

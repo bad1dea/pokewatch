@@ -22,12 +22,17 @@ jobs:
           xcodebuild -version
           xcodebuild -showsdks | grep -i watch
       - run: brew install xcodegen
-      - name: Import sprites
-        # Game sprites are fetched at build time and never committed (see Scripts/import_sprites.py).
+      - uses: actions/cache@v4
+        with:
+          path: build/SpriteSource
+          key: sprite-source-${{ hashFiles('Scripts/import_sprites.py') }}
+          restore-keys: sprite-source-
+      - name: Import sprites and make icons
+        # Game sprites and icons made from them are fetched at build time and never committed.
         run: |
           python3 -m venv "$RUNNER_TEMP/venv"
           "$RUNNER_TEMP/venv/bin/pip" install --quiet Pillow
-          "$RUNNER_TEMP/venv/bin/python" Scripts/import_sprites.py
+          PYTHON="$RUNNER_TEMP/venv/bin/python" Scripts/import_all.sh
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.4"

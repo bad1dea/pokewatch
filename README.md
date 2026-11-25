@@ -1,15 +1,11 @@
 # PokéWatch
 
-A standalone watchOS app that behaves like an animated Pokémon watch face, for Apple Watch Ultra 3
-(49 mm, 422 × 514). Native Swift and SwiftUI, entirely offline, no third-party dependencies,
-no analytics. A personal, non-commercial project.
+An animated Pokémon watch face for Apple Watch Ultra 3 (49 mm, 422 × 514), with an iPhone companion.
+Native Swift and SwiftUI, entirely offline, no third-party dependencies, no analytics. The watch app
+runs on its own; the iPhone app is optional. A personal, non-commercial project.
 
-| Electric | Pokémon Yellow | Minimal | Sleeping | Pokédex | Analog |
-| --- | --- | --- | --- | --- | --- |
-| ![](Documentation/Screenshots/face-01-electric.png) | ![](Documentation/Screenshots/face-02-yellow.png) | ![](Documentation/Screenshots/face-03-minimal.png) | ![](Documentation/Screenshots/face-04-sleeping.png) | ![](Documentation/Screenshots/face-05-pokedex.png) | ![](Documentation/Screenshots/face-06-analog.png) |
-| ![](Documentation/Screenshots/face-01-electric-aod.png) | ![](Documentation/Screenshots/face-02-yellow-aod.png) | ![](Documentation/Screenshots/face-03-minimal-aod.png) | ![](Documentation/Screenshots/face-04-sleeping-aod.png) | ![](Documentation/Screenshots/face-05-pokedex-aod.png) | ![](Documentation/Screenshots/face-06-analog-aod.png) |
-
-Bottom row: the reduced-luminance (Always-On) design, rendered in the simulator with `--dimmed`.
+Screenshots are generated locally (`Scripts/screenshots.sh`, `Scripts/phone-shots.sh`) and not kept in
+the repository, because they show game sprites.
 
 ## What's in it
 
@@ -36,6 +32,18 @@ Bottom row: the reduced-luminance (Always-On) design, rendered in the simulator 
 - **Customization**: long-press the face. Crown browses Pokémon and faces; a settings page covers accent,
   clock format, seconds, date, battery, activity, animation intensity, Always-On look, haptics,
   reduced motion and step goal.
+
+## iPhone app
+
+- **Companion**: the current face, live, in the Ultra's real screen shape; sprite style, shiny, favourites.
+- **Pokédex**: every Pokémon in the chosen style as a sprite grid, with search and generation filters.
+- **Faces**: all six faces animating with your Pokémon; accent, Pokémon Yellow palette, Always-On look.
+- **Watch**: every watch setting, and **sprite packs**: shiny colours and full-motion Modern, which don't
+  fit in the watch app (Apple's 75 MB cap). The iPhone sends them; the watch stores them.
+
+Settings sync both ways over WatchConnectivity; the newest change wins. Layouts adapt to the space they
+get: tab bar on narrow screens (iPhone Duo front screen, portrait), sidebar on wide ones (Duo unfolded,
+landscape). Built with Xcode 27 in CI so it doesn't run letterboxed on the Duo.
 
 ## Interaction
 

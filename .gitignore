@@ -20,3 +20,9 @@ xcuserdata/
 # Imported game sprites: never commit (see Scripts/import_sprites.py)
 PokeWatch/Resources/ImportedSprites/
 PokeWatch/Resources/ImportedStills/
+PokeWatch/Resources/Phone/
+# App icons are generated from game art by Scripts/make_app_icon.py: never commit
+**/AppIcon.appiconset/icon-1024.png
+# Screenshots show game sprites: keep them local (Scripts/screenshots.sh, Scripts/phone-shots.sh)
+Documentation/Screenshots/
+Documentation/sprite-sheet.png

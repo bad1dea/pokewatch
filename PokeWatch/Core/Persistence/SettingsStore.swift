@@ -131,6 +131,7 @@ final class SettingsStore {
         spriteStyle = string(.spriteStyle).flatMap(SpriteStyle.init(rawValue:)) ?? .default
         shiny = bool(.shiny, false)
         favorites = defaults.stringArray(forKey: Key.favorites.name) ?? CharacterRegistry.builtInOrder
+        updatedAt = Date(timeIntervalSince1970: defaults.double(forKey: Self.updatedAtKey))
     }
 
     func toggleFavorite(_ id: String) {
@@ -140,10 +141,42 @@ final class SettingsStore {
     /// False while launch-argument overrides are applied, so automation never
     /// overwrites the user's saved choices.
     @ObservationIgnored private var persisting = true
+    /// Called after a local change is saved (not for changes applied from the other device).
+    @ObservationIgnored var onLocalChange: (() -> Void)?
+    @ObservationIgnored private var applyingRemote = false
+    /// When the settings last changed on this device or were taken from the other one.
+    private(set) var updatedAt: Date
 
     private func save(_ value: Any, _ key: Key) {
         guard persisting else { return }
         defaults.set(value, forKey: key.name)
+        guard !applyingRemote else { return }
+        updatedAt = Date()
+        defaults.set(updatedAt.timeIntervalSince1970, forKey: Self.updatedAtKey)
+        onLocalChange?()
+    }
+
+    private static let updatedAtKey = "settings.updatedAt"
+
+    /// Everything the other device needs, as property-list values.
+    var syncPayload: [String: Any] {
+        var out: [String: Any] = ["updatedAt": updatedAt.timeIntervalSince1970]
+        for k in Key.allCases { if let v = defaults.object(forKey: k.name) { out[k.rawValue] = v } }
+        return out
+    }
+
+    /// Applies settings from the other device when they are newer than ours. Returns true if applied.
+    @discardableResult
+    func apply(syncPayload p: [String: Any]) -> Bool {
+        guard let stamp = p["updatedAt"] as? Double, stamp > updatedAt.timeIntervalSince1970 + 0.001 else { return false }
+        for k in Key.allCases { if let v = p[k.rawValue] { defaults.set(v, forKey: k.name) } }
+        let fresh = SettingsStore(defaults: defaults)
+        applyingRemote = true
+        defer { applyingRemote = false }
+        copy(from: fresh)
+        updatedAt = Date(timeIntervalSince1970: stamp)
+        defaults.set(stamp, forKey: Self.updatedAtKey)
+        return true
     }
 
     /// Applies `--face`, `--pokemon`, `--accent`, `--palette` launch arguments
@@ -162,7 +195,10 @@ final class SettingsStore {
 
     func resetToDefaults() {
         for k in Key.allCases { defaults.removeObject(forKey: k.name) }
-        let fresh = SettingsStore(defaults: defaults)
+        copy(from: SettingsStore(defaults: defaults))
+    }
+
+    private func copy(from fresh: SettingsStore) {
         characterID = fresh.characterID; faceStyle = fresh.faceStyle; accent = fresh.accent
         use24Hour = fresh.use24Hour; showSeconds = fresh.showSeconds; showDate = fresh.showDate
         showBattery = fresh.showBattery; showActivity = fresh.showActivity; intensity = fresh.intensity

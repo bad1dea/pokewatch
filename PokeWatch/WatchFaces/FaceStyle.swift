@@ -32,6 +32,15 @@ struct FaceOptions: Sendable {
     var stepGoal = 8000
 }
 
+extension FaceOptions {
+    @MainActor
+    init(_ s: SettingsStore) {
+        self.init(use24h: s.use24Hour, showSeconds: s.showSeconds, showDate: s.showDate, showBattery: s.showBattery,
+                  showActivity: s.showActivity && s.useHealth, accent: s.accent, retroPalette: s.retroPalette,
+                  analogSeconds: s.analogSeconds, aod: s.aodAppearance, stepGoal: s.stepGoal)
+    }
+}
+
 /// Everything a face needs for one frame.
 struct FaceContext {
     var date: Date
@@ -107,5 +116,36 @@ extension View {
             .onTapGesture(perform: action)
             .accessibilityAddTraits(.isButton)
             .accessibilityHint("Tap to play with your Pokémon")
+    }
+}
+
+/// Static context for SwiftUI previews and tests.
+struct FacePreview: View {
+    var style: FaceStyle
+    var dimmed = false
+    var characterID = "pikachu"
+    var mood: Mood = .happy
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1 / 15)) { tl in
+            FaceView(style: style, context: .sample(date: tl.date, characterID: characterID, mood: mood, dimmed: dimmed))
+        }
+    }
+}
+
+extension FaceContext {
+    static func sample(date: Date = Date(), characterID: String = "pikachu", mood: Mood = .happy,
+                       dimmed: Bool = false, style: FaceStyle = .electric, options: FaceOptions = FaceOptions(),
+                       art: ArtChoice = ArtChoice(), variant: AnimationVariant = .idle) -> FaceContext {
+        let c = CharacterRegistry.shared.character(characterID)
+        let t = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 86_400)
+        let animated = SpriteLibrary.shared.clip(for: c.id, style: art.style, shiny: art.shiny).map { !$0.isStill } ?? false
+        return FaceContext(date: date, time: t, dimmed: dimmed, character: c,
+                           pose: CompanionAnimator.pose(c, AnimationInput(time: t, mood: dimmed ? .sleeping : mood,
+                                                                          variant: variant, dimmed: dimmed,
+                                                                          animatedArt: animated)),
+                           mood: dimmed ? .sleeping : mood,
+                           battery: BatterySnapshot(level: 0.72, state: .unplugged, isLowPower: false),
+                           activity: .demo, options: options, particlesEnabled: true, variant: variant, art: art)
     }
 }

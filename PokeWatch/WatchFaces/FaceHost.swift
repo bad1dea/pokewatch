@@ -70,12 +70,7 @@ extension AppModel {
                                    wakeElapsed: wakeStart.map { realDate.timeIntervalSince($0) },
                                    reactionElapsed: reactionStart.map { realDate.timeIntervalSince($0) },
                                    dimmed: dimmed, animatedArt: clip.map { !$0.isStill } ?? false)
-        let options = FaceOptions(use24h: settings.use24Hour, showSeconds: settings.showSeconds,
-                                  showDate: settings.showDate, showBattery: settings.showBattery,
-                                  showActivity: settings.showActivity && settings.useHealth,
-                                  accent: settings.accent, retroPalette: settings.retroPalette,
-                                  analogSeconds: settings.analogSeconds, aod: settings.aodAppearance,
-                                  stepGoal: settings.stepGoal)
+        let options = FaceOptions(settings)
         return FaceContext(date: launch.displayDate(realDate), time: t, dimmed: dimmed, character: c,
                            pose: CompanionAnimator.pose(c, input), mood: mood, battery: battery.snapshot,
                            activity: health.snapshot, options: options,
@@ -84,28 +79,3 @@ extension AppModel {
     }
 }
 
-/// Static context for SwiftUI previews and tests.
-struct FacePreview: View {
-    var style: FaceStyle
-    var dimmed = false
-    var characterID = "pikachu"
-    var mood: Mood = .happy
-
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 15)) { tl in
-            FaceView(style: style, context: .sample(date: tl.date, characterID: characterID, mood: mood, dimmed: dimmed))
-        }
-    }
-}
-
-extension FaceContext {
-    static func sample(date: Date = Date(), characterID: String = "pikachu", mood: Mood = .happy,
-                       dimmed: Bool = false, style: FaceStyle = .electric) -> FaceContext {
-        let c = CharacterRegistry.shared.character(characterID)
-        let t = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 86_400)
-        return FaceContext(date: date, time: t, dimmed: dimmed, character: c,
-                           pose: CompanionAnimator.pose(c, AnimationInput(time: t, mood: mood, dimmed: dimmed)),
-                           mood: mood, battery: BatterySnapshot(level: 0.72, state: .unplugged, isLowPower: false),
-                           activity: .demo, options: FaceOptions(), particlesEnabled: true)
-    }
-}

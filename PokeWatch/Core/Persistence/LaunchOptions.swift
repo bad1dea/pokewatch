@@ -27,6 +27,8 @@ struct LaunchOptions: Sendable {
     var frozenTime: DateComponents?
     var openSettings = false
     var openBrowser = false
+    /// iPhone app: tab to open (companion, pokedex, faces, watch).
+    var phoneTab: String?
     var style: SpriteStyle?
     var shiny = false
     var use24h: Bool?
@@ -42,6 +44,7 @@ struct LaunchOptions: Sendable {
             case "--dimmed": forceDimmed = true
             case "--settings": openSettings = true
             case "--browser": openBrowser = true
+            case "--tab": phoneTab = it.next()
             case "--shiny": shiny = true
             case "--24h": use24h = true
             case "--12h": use24h = false

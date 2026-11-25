@@ -79,6 +79,19 @@ and Always-On; `Scripts/check_clipping.py` compares each shot with the device ma
 SpriteKit isn't used: SwiftUI with cached bitmaps already reduces each frame to a few transforms,
 and SpriteKit would add a render loop with no measurable benefit at these sprite sizes.
 
+## iPhone app and sync
+
+`PokeWatch/Phone/` is the iPhone target. It compiles the shared model, sprite and face code (everything
+except the watch-only `AppModel`, `FaceHost`, battery and HealthKit services), so its previews are the
+real faces. `SyncService` (WatchConnectivity) is shared:
+
+- **Settings**: each side publishes `SettingsStore.syncPayload` as its application context. A payload
+  carries `updatedAt`; the receiver applies it only if newer, and remote changes don't echo back.
+- **Sprite packs**: the iPhone bundles the full sprite set (`Resources/Phone/`, shiny + full-rate Modern),
+  builds a pack (`SpritePackArchive`: one file, JSON index plus data, paths checked against escaping the
+  folder) and queues it with `transferFile`. The watch unpacks into `Application Support/SpritePacks/<kind>/`,
+  adds it to `SpriteFiles.extraRoots` (searched before the bundle), and reports installed packs back.
+
 ## Complications
 
 The widget extension shares `Characters/`, `Resources/Sprites`, `HealthQueries` and a few views with
