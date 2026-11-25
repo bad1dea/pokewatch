@@ -39,7 +39,7 @@ for test in m:
             os.rename(src, dst)
             if "-landscape" in name:
                 # Captured in the portrait framebuffer; turn upright.
-                subprocess.run(["sips", "-r", "90", dst], capture_output=True)
+                subprocess.run(["sips", "-r", "270", dst], capture_output=True)
 os.remove(os.path.join(d, "manifest.json"))
 PY
   xcrun simctl delete "$udid"
