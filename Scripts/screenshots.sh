@@ -42,6 +42,11 @@ for p in pikachu eevee gengar snorlax charmander squirtle bulbasaur mew umbreon 
          charizard mewtwo lucario dragonite jigglypuff espeon; do
   shot "pokemon-$p" 3 --face electric --pokemon "$p" --mood calm --time 10:09 --12h
 done
+for p in mew:gen1 typhlosion:gen2 rayquaza:gen3 lucario:gen4 zekrom:gen5 sprigatito:modern; do
+  shot "era-${p%%:*}" 3 --face electric --pokemon "${p%%:*}" --style "${p##*:}" --mood calm --time 10:09 --12h
+done
+shot "browser-gen1" 5 --browser --style gen1
+shot "browser-modern" 5 --browser --style modern
 for s in gen1 gen2 gen3 gen4 gen5 modern; do
   shot "style-$s" 3 --face electric --style "$s" --mood calm --time 10:09 --12h
 done

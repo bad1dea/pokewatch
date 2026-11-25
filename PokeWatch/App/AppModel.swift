@@ -126,6 +126,25 @@ final class AppModel {
         refreshComplications(force: true)
     }
 
+    /// Favourites available in the current style, in favourite order; the current Pokémon is
+    /// included even if it isn't a favourite, so the Crown wheel always starts from it.
+    var crownRoster: [CharacterDefinition] {
+        let style = settings.spriteStyle
+        var ids = settings.favorites.filter { registry.isAvailable($0, in: style) }
+        if !ids.contains(settings.characterID) { ids.insert(settings.characterID, at: 0) }
+        return ids.map(registry.character)
+    }
+
+    /// Era-accurate styles: after switching to an older generation, a Pokémon that didn't
+    /// exist yet is replaced by the first available favourite (or Pikachu).
+    func styleChanged() {
+        let style = settings.spriteStyle
+        guard !registry.isAvailable(settings.characterID, in: style) else { return }
+        let next = settings.favorites.first { registry.isAvailable($0, in: style) }
+            ?? registry.available(in: style).first?.id ?? "pikachu"
+        selectCharacter(next)
+    }
+
     func haptic(_ type: WKHapticType) {
         guard settings.haptics else { return }
         WKInterfaceDevice.current().play(type)

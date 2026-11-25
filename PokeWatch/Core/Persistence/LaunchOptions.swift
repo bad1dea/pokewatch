@@ -11,6 +11,7 @@ import Foundation
 ///   --mood <mood>       force a mood (sleeping, happy, celebrating, tired, …)
 ///   --time HH:MM        freeze the displayed clock
 ///   --settings          open customization on launch
+///   --browser           open the full Pokémon grid on launch
 ///   --style <style>     gen1 | gen2 | gen3 | gen4 | gen5 | modern
 ///   --shiny             shiny sprites
 ///   --24h / --12h       clock format
@@ -25,6 +26,7 @@ struct LaunchOptions: Sendable {
     var mood: Mood?
     var frozenTime: DateComponents?
     var openSettings = false
+    var openBrowser = false
     var style: SpriteStyle?
     var shiny = false
     var use24h: Bool?
@@ -39,6 +41,7 @@ struct LaunchOptions: Sendable {
             case "--demo": demo = true
             case "--dimmed": forceDimmed = true
             case "--settings": openSettings = true
+            case "--browser": openBrowser = true
             case "--shiny": shiny = true
             case "--24h": use24h = true
             case "--12h": use24h = false

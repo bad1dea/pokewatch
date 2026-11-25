@@ -39,6 +39,18 @@ enum SpriteStyle: String, CaseIterable, Codable, Identifiable, Sendable {
     }
 
     static let `default`: SpriteStyle = .gen5
+
+    /// Last national dex number in this style's games.
+    var lastDex: Int {
+        switch self {
+        case .gen1: 151
+        case .gen2: 251
+        case .gen3: 386
+        case .gen4: 493
+        case .gen5: 649
+        case .modern: 1025
+        }
+    }
 }
 
 /// Which artwork to draw for the companion.
@@ -56,13 +68,28 @@ enum SpriteFiles {
         return FileManager.default.fileExists(atPath: dir.appendingPathComponent("manifest.json").path) ? dir : nil
     }
 
-    static func stillURL(id: String, style: SpriteStyle, shiny: Bool, bundle: Bundle = .main) -> URL? {
-        guard let root = bundle.resourceURL?.appendingPathComponent("ImportedStills", isDirectory: true) else { return nil }
-        let url = root.appendingPathComponent("\(style.rawValue)/\(id)/\(shiny ? "shiny" : "normal").png")
-        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+    /// Bundles that carry `ImportedStills`: the main bundle (widget extension) and, from the app,
+    /// the embedded widget extension, so the first frames are bundled only once.
+    static let stillBundles: [Bundle] = {
+        var bundles: [Bundle] = [.main]
+        if let plugins = Bundle.main.builtInPlugInsURL,
+           let widget = Bundle(url: plugins.appendingPathComponent("PokeWatchWidgets.appex")) {
+            bundles.append(widget)
+        }
+        return bundles
+    }()
+
+    static func stillURL(id: String, style: SpriteStyle, shiny: Bool, bundles: [Bundle] = stillBundles) -> URL? {
+        for bundle in bundles {
+            guard let root = bundle.resourceURL?.appendingPathComponent("ImportedStills", isDirectory: true) else { continue }
+            let url = root.appendingPathComponent("\(style.rawValue)/\(id)/\(shiny ? "shiny" : "normal").png")
+            if FileManager.default.fileExists(atPath: url.path) { return url }
+        }
+        return nil
     }
 
     /// First style in the fallback chain that has art for this Pokémon (shiny falls back to normal).
+    /// Only complications use the chain; faces and pickers are era-accurate.
     static func resolve(id: String, style: SpriteStyle, shiny: Bool,
                         exists: (String, SpriteStyle, Bool) -> Bool) -> (SpriteStyle, Bool)? {
         for s in style.fallbackChain {

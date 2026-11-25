@@ -93,16 +93,13 @@ final class SpriteLibrary: @unchecked Sendable {
         return found
     }
 
-    /// Whether any imported art exists for this Pokémon.
-    func hasArt(for id: String) -> Bool {
-        lock.lock(); defer { lock.unlock() }
-        return SpriteStyle.allCases.contains { exists(id, $0, false) }
-    }
-
-    /// The clip to show, following the style fallback chain. Nil when nothing was imported.
+    /// The clip for this Pokémon in exactly this style (era-accurate: no borrowing from other
+    /// generations). Shiny falls back to normal colours. Nil when the style has no sprite for it.
     func clip(for id: String, style: SpriteStyle, shiny: Bool) -> SpriteClip? {
         lock.lock(); defer { lock.unlock() }
-        guard let (s, sh) = SpriteFiles.resolve(id: id, style: style, shiny: shiny, exists: exists),
+        let s = style
+        let sh = shiny && exists(id, style, true)
+        guard exists(id, style, sh),
               let dir = SpriteFiles.animationDirectory(id: id, style: s, shiny: sh, bundle: bundle) else { return nil }
         let key = "\(s.rawValue)/\(id)/\(sh)"
         if let hit = clips[key] {
@@ -119,5 +116,11 @@ final class SpriteLibrary: @unchecked Sendable {
     var cachedCount: Int {
         lock.lock(); defer { lock.unlock() }
         return clips.count
+    }
+
+    /// Shiny sprites are not bundled in the watch app (size cap); a companion app may add them later.
+    var hasShinyArt: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return SpriteStyle.allCases.contains { exists("pikachu", $0, true) }
     }
 }

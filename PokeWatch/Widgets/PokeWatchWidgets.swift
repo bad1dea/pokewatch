@@ -27,13 +27,22 @@ struct PokemonEntity: AppEntity {
     init(_ c: CharacterDefinition) { id = c.id; name = c.name }
 }
 
-struct PokemonQuery: EntityQuery {
+struct PokemonQuery: EntityStringQuery {
+    func entities(matching string: String) async throws -> [PokemonEntity] {
+        let q = string.trimmingCharacters(in: .whitespaces)
+        return CharacterRegistry.shared.characters
+            .filter { q.isEmpty || $0.name.localizedCaseInsensitiveContains(q) || "\($0.dexNumber)" == q }
+            .map(PokemonEntity.init)
+    }
+
     func entities(for identifiers: [String]) async throws -> [PokemonEntity] {
         CharacterRegistry.shared.characters.filter { identifiers.contains($0.id) }.map(PokemonEntity.init)
     }
 
+    /// The hand-tuned companions first; the rest are reachable by search.
     func suggestedEntities() async throws -> [PokemonEntity] {
-        CharacterRegistry.shared.characters.map(PokemonEntity.init)
+        let registry = CharacterRegistry.shared
+        return CharacterRegistry.builtInOrder.filter(registry.contains).map { PokemonEntity(registry.character($0)) }
     }
 
     func defaultResult() async -> PokemonEntity? {
@@ -117,7 +126,8 @@ struct CompanionProvider: AppIntentTimelineProvider {
 
     /// watchOS shows these as ready-made choices when editing a face.
     func recommendations() -> [AppIntentRecommendation<CompanionConfiguration>] {
-        CharacterRegistry.shared.characters.map {
+        let registry = CharacterRegistry.shared
+        return CharacterRegistry.builtInOrder.filter(registry.contains).map(registry.character).map {
             AppIntentRecommendation(intent: CompanionConfiguration(pokemon: PokemonEntity($0)), description: $0.name)
         }
     }

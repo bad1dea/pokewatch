@@ -2,20 +2,44 @@ import XCTest
 @testable import PokeWatch
 
 final class CharacterRegistryTests: XCTestCase {
-    func testLoadsBuiltInCharactersInOrder() {
-        let registry = CharacterRegistry(bundles: [.main], extraDirectories: [])
-        let ids = registry.characters.map(\.id)
-        // The ten with fallback pixel art are always there; the rest appear when sprites were imported.
-        XCTAssertEqual(Array(ids.prefix(10)), Array(CharacterRegistry.builtInOrder.prefix(10)))
-        XCTAssertEqual(ids, CharacterRegistry.builtInOrder.filter(ids.contains))
+    func testWithoutImportsTheTenPixelArtCharactersRemainInDexOrder() {
+        let registry = CharacterRegistry(bundles: [.main], extraDirectories: [], catalog: [])
+        XCTAssertEqual(registry.characters.map(\.dexNumber), [1, 4, 7, 25, 54, 94, 133, 143, 151, 197])
         XCTAssertTrue(registry.rejected.isEmpty, "Rejected: \(registry.rejected)")
+        // Hand-written files without pixel art need imported art to be listed.
+        let all = CharacterRegistry(bundles: [.main], extraDirectories: [], catalog: [], hasImportedArt: { _ in true })
+        XCTAssertEqual(Set(all.characters.map(\.id)), Set(CharacterRegistry.builtInOrder))
     }
 
-    func testCharactersWithoutArtAreHidden() {
-        let none = CharacterRegistry(bundles: [.main], extraDirectories: [], hasImportedArt: { _ in false })
-        XCTAssertEqual(none.characters.map(\.id), Array(CharacterRegistry.builtInOrder.prefix(10)))
-        let all = CharacterRegistry(bundles: [.main], extraDirectories: [], hasImportedArt: { _ in true })
-        XCTAssertEqual(all.characters.map(\.id), CharacterRegistry.builtInOrder)
+    func testCatalogStylesAreEraAccurate() throws {
+        let registry = CharacterRegistry.shared
+        guard registry.entry("pikachu") != nil else { throw XCTSkip("Sprites not imported") }
+        XCTAssertGreaterThan(registry.characters.count, 1000)
+        let gen1 = registry.available(in: .gen1)
+        XCTAssertEqual(gen1.count, 151)
+        XCTAssertTrue(gen1.allSatisfy { $0.dexNumber <= 151 })
+        XCTAssertFalse(registry.isAvailable("lucario", in: .gen1))
+        XCTAssertFalse(registry.isAvailable("lucario", in: .gen3))
+        XCTAssertTrue(registry.isAvailable("lucario", in: .gen4))
+        XCTAssertNil(SpriteLibrary().clip(for: "lucario", style: .gen1, shiny: false), "no borrowing between styles")
+        for style in SpriteStyle.allCases {
+            XCTAssertTrue(registry.available(in: style).allSatisfy { $0.dexNumber <= style.lastDex }, "\(style)")
+        }
+        // Hand-tuned personalities override the generated ones.
+        XCTAssertEqual(registry.character("snorlax").personality.sleepsWhenIdle, true)
+        XCTAssertEqual(registry.character("gengar").personality.nightOwl, true)
+    }
+
+    func testGeneratedCharactersFollowTheirType() {
+        let e = CatalogEntry(dex: 135, id: "jolteon", name: "Jolteon", genus: "Lightning", types: ["electric"],
+                             generation: 1, evolvesFrom: 133, legendary: false, mythical: false, styles: ["gen1": ["normal"]])
+        let c = CharacterDefinition(catalog: e)
+        XCTAssertEqual(c.element, .spark)
+        XCTAssertEqual(c.category, "Lightning")
+        XCTAssertEqual(c.type, "Electric")
+        XCTAssertTrue(c.personality.stepLover)
+        XCTAssertNoThrow(try c.validate())
+        XCTAssertFalse(c.hasPixelArt)
     }
 
     func testEveryCharacterValidatesAndHasDistinctPersonality() throws {
@@ -27,8 +51,10 @@ final class CharacterRegistryTests: XCTestCase {
             XCTAssertGreaterThan(c.height, 10, c.id)
             XCTAssertEqual(Set(rows.map(\.count)).count, 1, "\(c.id) rows must share a width")
         }
-        let signatures = Set(chars.map { "\($0.personality.idleStyle)-\($0.personality.bobSpeed)-\($0.element)" })
-        XCTAssertEqual(signatures.count, chars.count, "Each Pokémon should move differently")
+        // The hand-tuned companions each move differently (generated ones vary by type and seed).
+        let tuned = chars.filter { CharacterRegistry.builtInOrder.contains($0.id) }
+        let signatures = Set(tuned.map { "\($0.personality.idleStyle)-\($0.personality.bobSpeed)-\($0.element)" })
+        XCTAssertEqual(signatures.count, tuned.count, "Each hand-tuned Pokémon should move differently")
     }
 
     func testRejectsUnknownPaletteKey() {
@@ -67,13 +93,14 @@ final class CharacterRegistryTests: XCTestCase {
         let registry = CharacterRegistry(bundles: [.main], extraDirectories: [dir])
         XCTAssertEqual(registry.characters.count, base + 1)
         XCTAssertEqual(registry.character("shinyeevee").name, "Shiny Eevee")
-        XCTAssertEqual(registry.characters.last?.id, "shinyeevee")
+        XCTAssertTrue(registry.contains("shinyeevee"))
     }
 
-    func testUnknownIDFallsBackToFirstCharacter() {
+    func testUnknownIDFallsBackToFirstCharacter() throws {
         let registry = CharacterRegistry(bundles: [.main], extraDirectories: [])
-        XCTAssertEqual(registry.character("missingno").id, "pikachu")
-        XCTAssertEqual(registry.neighbour(of: "pikachu", offset: -1).id, registry.characters.last?.id)
+        XCTAssertEqual(registry.character("missingno").id, registry.characters.first?.id)
+        let i = try XCTUnwrap(registry.characters.firstIndex { $0.id == "pikachu" })
+        XCTAssertEqual(registry.neighbour(of: "pikachu", offset: -1).id, registry.characters[i - 1].id)
     }
 }
 

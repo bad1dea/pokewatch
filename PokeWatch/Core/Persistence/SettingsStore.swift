@@ -92,11 +92,13 @@ final class SettingsStore {
     var variant: AnimationVariant { didSet { save(variant.rawValue, .variant) } }
     var spriteStyle: SpriteStyle { didSet { save(spriteStyle.rawValue, .spriteStyle) } }
     var shiny: Bool { didSet { save(shiny, .shiny) } }
+    /// Pokémon on the Digital Crown wheel; the full list is in the picker.
+    var favorites: [String] { didSet { save(favorites, .favorites) } }
 
     enum Key: String, CaseIterable {
         case characterID, faceStyle, accent, use24Hour, showSeconds, showDate, showBattery, showActivity,
              intensity, aodAppearance, haptics, reducedMotion, stepGoal, retroPalette, analogSeconds,
-             useHealth, heartRate, variant, spriteStyle, shiny
+             useHealth, heartRate, variant, spriteStyle, shiny, favorites
         var name: String { "settings.\(rawValue)" }
     }
 
@@ -128,6 +130,11 @@ final class SettingsStore {
         variant = string(.variant).flatMap(AnimationVariant.init(rawValue:)) ?? .idle
         spriteStyle = string(.spriteStyle).flatMap(SpriteStyle.init(rawValue:)) ?? .default
         shiny = bool(.shiny, false)
+        favorites = defaults.stringArray(forKey: Key.favorites.name) ?? CharacterRegistry.builtInOrder
+    }
+
+    func toggleFavorite(_ id: String) {
+        if let i = favorites.firstIndex(of: id) { favorites.remove(at: i) } else { favorites.append(id) }
     }
 
     /// False while launch-argument overrides are applied, so automation never
@@ -162,6 +169,6 @@ final class SettingsStore {
         aodAppearance = fresh.aodAppearance; haptics = fresh.haptics; reducedMotion = fresh.reducedMotion
         stepGoal = fresh.stepGoal; retroPalette = fresh.retroPalette; analogSeconds = fresh.analogSeconds
         useHealth = fresh.useHealth; heartRate = fresh.heartRate; variant = fresh.variant
-        spriteStyle = fresh.spriteStyle; shiny = fresh.shiny
+        spriteStyle = fresh.spriteStyle; shiny = fresh.shiny; favorites = fresh.favorites
     }
 }

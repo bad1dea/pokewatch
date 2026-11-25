@@ -5,73 +5,93 @@ struct CustomizeView: View {
     @State private var page = 0
 
     var body: some View {
-        TabView(selection: $page) {
-            CompanionPicker().tag(0)
-            FacePicker().tag(1)
-            SettingsView().tag(2)
+        NavigationStack {
+            TabView(selection: $page) {
+                CompanionPicker().tag(0)
+                FacePicker().tag(1)
+                SettingsView().tag(2)
+            }
+            .tabViewStyle(.page)
+            .background(Color.black)
         }
-        .tabViewStyle(.page)
-        .background(Color.black)
     }
 }
 
-/// Browse companions with the Digital Crown (or the side arrows). Selection applies live.
+/// Turn the Digital Crown through your favourites (or tap the arrows). Selection applies live.
+/// "All Pokémon" opens the full, searchable grid.
 struct CompanionPicker: View {
     @Environment(AppModel.self) private var model
     @State private var crown = 0.0
+    @State private var roster: [CharacterDefinition] = []
 
     var body: some View {
-        let chars = model.registry.characters
-        let index = min(max(Int(crown.rounded()), 0), chars.count - 1)
-        let c = chars[index]
+        let list = roster.isEmpty ? [model.character] : roster
+        let index = min(max(Int(crown.rounded()), 0), list.count - 1)
+        let c = list[index]
+        let art = ArtChoice(style: model.settings.spriteStyle, shiny: model.settings.shiny)
 
         TimelineView(.animation(minimumInterval: 1 / 12)) { tl in
             let t = tl.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 86_400)
-            VStack(spacing: 6) {
-                Text("POKÉMON")
+            VStack(spacing: 4) {
+                Text("FAVOURITES")
                     .font(.system(size: 11, weight: .bold, design: .rounded))
                     .tracking(2)
                     .foregroundStyle(Palette.dim)
-
                 HStack {
                     StepButton(systemImage: "chevron.left") { crown = Double(max(0, index - 1)) }
                     Spacer(minLength: 0)
                     CompanionView(character: c,
                                   pose: CompanionAnimator.pose(c, AnimationInput(time: t, mood: .happy, animatedArt: true)),
-                                  time: t, box: CGSize(width: 110, height: 84),
-                                  art: ArtChoice(style: model.settings.spriteStyle, shiny: model.settings.shiny),
+                                  time: t, box: CGSize(width: 104, height: 76), art: art,
                                   particles: true, showSpeech: false)
                     Spacer(minLength: 0)
-                    StepButton(systemImage: "chevron.right") { crown = Double(min(chars.count - 1, index + 1)) }
+                    StepButton(systemImage: "chevron.right") { crown = Double(min(list.count - 1, index + 1)) }
                 }
-
                 Text(c.name)
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundStyle(Palette.ink)
-                Text("\(c.dexLabel) · \(model.settings.spriteStyle.shortTitle)\(model.settings.shiny ? " · Shiny" : "")")
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                Text("\(c.dexLabel) · \(art.style.shortTitle)")
                     .font(.system(size: 12, weight: .medium, design: .monospaced))
                     .foregroundStyle(Color(hex: c.accentHex))
-                PageDots(count: chars.count, index: index)
-                    .padding(.top, 2)
+                NavigationLink {
+                    PokemonBrowser()
+                } label: {
+                    Text("All Pokémon")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Palette.electric)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 5)
+                        .overlay(Capsule().stroke(Palette.faint, lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 2)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .focusable()
-        .digitalCrownRotation($crown, from: 0, through: Double(max(chars.count - 1, 0)), by: 1,
+        .digitalCrownRotation($crown, from: 0, through: Double(max(list.count - 1, 0)), by: 1,
                               sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
-        .onAppear {
-            crown = Double(chars.firstIndex { $0.id == model.settings.characterID } ?? 0)
-        }
-        .onChange(of: index) { _, i in model.selectCharacter(chars[i].id) }
+        .onAppear(perform: reload)
+        .onChange(of: model.settings.characterID) { _, _ in if !roster.contains(where: { $0.id == model.settings.characterID }) { reload() } }
+        .onChange(of: model.settings.favorites) { _, _ in reload() }
+        .onChange(of: model.settings.spriteStyle) { _, _ in reload() }
+        .onChange(of: index) { _, i in if list.indices.contains(i) { model.selectCharacter(list[i].id) } }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Pokémon: \(c.name)")
         .accessibilityAdjustableAction { dir in
             switch dir {
-            case .increment: crown = Double(min(chars.count - 1, index + 1))
+            case .increment: crown = Double(min(list.count - 1, index + 1))
             case .decrement: crown = Double(max(0, index - 1))
             @unknown default: break
             }
         }
+    }
+
+    private func reload() {
+        roster = model.crownRoster
+        crown = Double(roster.firstIndex { $0.id == model.settings.characterID } ?? 0)
     }
 }
 

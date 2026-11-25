@@ -10,6 +10,7 @@ struct RootView: View {
     @Environment(\.isLuminanceReduced) private var luminanceReduced
     @Environment(\.scenePhase) private var scenePhase
     @State private var showCustomize = false
+    @State private var showBrowser = false
 
     var body: some View {
         NavigationStack {
@@ -33,6 +34,9 @@ struct RootView: View {
                 .sheet(isPresented: $showCustomize) {
                     CustomizeView()
                 }
+                .sheet(isPresented: $showBrowser) {
+                    NavigationStack { PokemonBrowser() }
+                }
         }
         .background(Color.black)
         .onChange(of: luminanceReduced) { _, reduced in
@@ -48,6 +52,7 @@ struct RootView: View {
         }
         .onAppear {
             if model.launch.openSettings { showCustomize = true }
+            if model.launch.openBrowser { showBrowser = true }
         }
         .onOpenURL { _ in model.wake() }
     }

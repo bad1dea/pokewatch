@@ -11,7 +11,10 @@ struct SettingsView: View {
                     Picker("Sprites", selection: $s.spriteStyle) {
                         ForEach(SpriteStyle.allCases) { Text($0.title).tag($0) }
                     }
-                    Toggle("Shiny", isOn: $s.shiny)
+                    .onChange(of: s.spriteStyle) { _, _ in model.styleChanged() }
+                    if SpriteLibrary.shared.hasShinyArt {
+                        Toggle("Shiny", isOn: $s.shiny)
+                    }
                     Picker("Accent", selection: $s.accent) {
                         ForEach(AccentChoice.allCases) { a in
                             HStack {

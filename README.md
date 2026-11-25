@@ -15,14 +15,17 @@ Bottom row: the reduced-luminance (Always-On) design, rendered in the simulator 
 
 - **Six faces**: Electric, Pokémon Yellow (green / monochrome / yellow palettes), Minimal, Sleeping,
   Pokédex, Analog (Pokéball dial; the Pokémon moves to whichever part of the dial the hands leave free).
-- **Sixteen companions**: Pikachu, Eevee, Gengar, Snorlax, Charmander, Squirtle, Bulbasaur, Mew, Umbreon,
-  Psyduck, Charizard, Mewtwo, Lucario, Dragonite, Jigglypuff, Espeon. Each has its own idle motion,
-  particles, voice lines and temperament (Gengar is a night owl, Snorlax naps when your steps stall, …).
-- **Every generation's sprites**: Gen I Yellow, Gen II Crystal, Gen III Emerald, Gen IV HeartGold,
-  Gen V Black/White and Modern (Showdown), normal or shiny. Animated wherever the games animated them;
-  Gen I stills get motion from the companion engine. Imported at build time by
-  `Scripts/import_sprites.py` and never committed (see [ASSETS.md](Documentation/ASSETS.md)).
-  Without an import, the app falls back to original pixel art.
+- **1,011 Pokémon** (every species with sprites upstream). Sixteen have hand-tuned personalities
+  (Gengar is a night owl, Snorlax naps when your steps stall, …); the rest get motion, particles and
+  temperament from their type.
+- **Era-accurate sprite styles**: Gen I Yellow (151), Gen II Crystal (251), Gen III Emerald (386),
+  Gen IV HeartGold (493), Gen V Black/White (649) and Modern/Showdown (all). A style only lists the
+  Pokémon that existed in that generation. Animated wherever the games animated them; Gen I stills
+  get motion from the companion engine. Imported at build time by `Scripts/import_sprites.py` and
+  never committed (see [ASSETS.md](Documentation/ASSETS.md)). Without an import, the app falls back to
+  original pixel art for ten of them.
+- **Picking**: the Digital Crown turns through your favourites; "All Pokémon" opens a sprite grid with
+  search (name or number) and generation filters. Long-press a sprite to add or remove a favourite.
 - **Behaviour**: idle, blinking, sleeping, waking, happy, tap reaction, low battery, charging, goal
   celebration and time-of-day moods. See [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md).
 - **Always-On**: static sleeping pose, no seconds, dimmed palette, minute-cadence timeline, wake-up

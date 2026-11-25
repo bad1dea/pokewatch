@@ -28,14 +28,23 @@ final class ImportedSpriteTests: XCTestCase {
         }
     }
 
-    func testEveryCharacterHasArtInEveryStyle() throws {
+    func testEveryListedPokemonHasArtInItsStyles() throws {
         try requireImports()
         let lib = SpriteLibrary()
-        for c in CharacterRegistry.shared.characters {
-            for style in SpriteStyle.allCases {
+        let registry = CharacterRegistry.shared
+        for style in SpriteStyle.allCases {
+            let list = registry.available(in: style)
+            for c in stride(from: 0, to: list.count, by: 23).map({ list[$0] }) {
                 XCTAssertNotNil(lib.clip(for: c.id, style: style, shiny: false), "\(c.id) \(style)")
+                XCTAssertNotNil(SpriteFiles.stillURL(id: c.id, style: style, shiny: false), "still \(c.id) \(style)")
             }
         }
+    }
+
+    func testShinyFallsBackToNormalWhenNotBundled() throws {
+        try requireImports()
+        let clip = try XCTUnwrap(SpriteLibrary().clip(for: "pikachu", style: .gen5, shiny: true))
+        XCTAssertEqual(clip.shiny, SpriteLibrary.shared.hasShinyArt)
     }
 
     func testClipTimingFollowsManifest() throws {

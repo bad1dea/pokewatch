@@ -51,7 +51,7 @@ struct YellowFace: View {
                     if ctx.showCompanion {
                         CompanionView(character: ctx.character, pose: pose, time: ctx.time,
                                       box: CGSize(width: routeBox.width * 0.5, height: routeBox.height - 6),
-                                      art: ArtChoice(style: .gen1, shiny: ctx.art.shiny),
+                                      art: ctx.art,
                                       tint: .shades(tintShades), particles: false)
                             .companionTapTarget(onTapCompanion)
                             .offset(x: travel, y: -6)

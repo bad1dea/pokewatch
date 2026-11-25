@@ -1,34 +1,37 @@
 #!/usr/bin/env python3
-"""Import the battle sprites of every generation for PokéWatch.
+"""Import Pokémon battle sprites of every generation, plus the Pokédex catalog, for PokéWatch.
 
-Adapted from the pokewatch-sprite-kit importer. Downloads sprites from the public PokeAPI/sprites
-repository at build time and writes, per art style, Pokémon and variant:
+Adapted from the pokewatch-sprite-kit importer. Downloads at build time from the public
+PokeAPI repositories and writes:
 
-    PokeWatch/Resources/ImportedSprites/<style>/<id>/<variant>/sheet.png      1x frames in a grid
+    PokeWatch/Resources/ImportedSprites/<style>/<id>/<variant>/sheet.png      1x frames in a grid (paletted)
     PokeWatch/Resources/ImportedSprites/<style>/<id>/<variant>/manifest.json  frame size, grid, timing, source
-    PokeWatch/Resources/ImportedStills/<style>/<id>/<variant>.png             first frame, for complications
+    PokeWatch/Resources/ImportedStills/<style>/<id>/<variant>.png             first frame (complications, picker)
+    .../ImportedSprites/catalog.json and .../ImportedStills/catalog.json      names, categories, types, generation,
+                                                                              and which styles exist per Pokémon
 
-Styles: gen1 (Yellow, still), gen2 (Crystal, GIF), gen3 (Emerald, APNG), gen4 (HeartGold/SoulSilver,
-APNG), gen5 (Black/White, GIF), modern (Showdown, GIF). A Pokémon that didn't exist yet in a
-generation is simply absent there; the app falls back to the next style that has it.
+Styles are era-accurate: a style only contains the Pokémon that existed in that generation.
+gen1 Yellow (still), gen2 Crystal (GIF), gen3 Emerald (APNG), gen4 HeartGold/SoulSilver (APNG),
+gen5 Black/White (GIF), modern Showdown (GIF).
 
-Frames are cropped to the union of their alpha bounds so the animation never jitters, and stored
-unscaled: the app scales them by whole device pixels to fit each face, which keeps memory small.
+Size: Apple caps a watchOS app at 75 MB uncompressed. By default this imports normal colours only
+and keeps every other frame of the Modern style (its 3D renders are high frame rate), about 50 MB.
+Shiny (--shiny) and full-rate Modern (--full-modern) are meant for a future iPhone companion that
+transfers extra packs to the watch; bundling them in the watch app would exceed the cap.
 
-The sprites belong to their rights holders. The output folder is git-ignored and must never be
-committed to the public repository; CI and TestFlight builds run this script before building.
+The sprites and catalog text belong to their rights holders. Output folders are git-ignored and
+must never be committed to the public repository; CI and TestFlight run this before building.
 
-Usage: Scripts/import_sprites.py [--ids 25 133 ...] [--normal-only] [--cache DIR] [--out DIR]
+Usage: Scripts/import_sprites.py [--ids 25 133 ...] [--styles gen1 gen5] [--shiny] [--full-modern] [--jobs 16]
 """
-import argparse, hashlib, io, json, math, sys, time, urllib.request
+import argparse, csv, hashlib, io, json, math, sys, threading, time, urllib.error, urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
-POKEMON = {25: "pikachu", 133: "eevee", 94: "gengar", 143: "snorlax", 4: "charmander", 7: "squirtle",
-           1: "bulbasaur", 151: "mew", 197: "umbreon", 54: "psyduck", 6: "charizard", 150: "mewtwo",
-           448: "lucario", 149: "dragonite", 39: "jigglypuff", 196: "espeon"}
-ROOT_URL = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon"
+SPRITES_URL = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon"
+CSV_URL = "https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv"
 # style -> (highest national dex number, normal path, shiny path or None). {n} is the dex number.
 STYLES = {
     "gen1": (151, "versions/generation-i/yellow/transparent/{n}.png", None),
@@ -38,30 +41,80 @@ STYLES = {
     "gen5": (649, "versions/generation-v/black-white/animated/{n}.gif", "versions/generation-v/black-white/animated/shiny/{n}.gif"),
     "modern": (1025, "other/showdown/{n}.gif", "other/showdown/shiny/{n}.gif"),
 }
+MAX_DEX = 1025
 COLUMNS = 10
+# Keep every Nth frame per style (durations are merged so the loop length is unchanged).
+DECIMATE = {"modern": 2}
 STILL_MS = 1000
+ENGLISH = "9"
+
+
+class Missing(Exception):
+    """The upstream repository has no file for this sprite."""
 
 
 def fetch(url, cache):
     if cache.exists():
         return cache.read_bytes()
-    for attempt in range(3):
+    for attempt in range(5):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "PokeWatch-asset-importer/1.0"})
+            req = urllib.request.Request(url, headers={"User-Agent": "PokeWatch-asset-importer/2.0"})
             with urllib.request.urlopen(req, timeout=30) as r:
                 data = r.read()
-            with Image.open(io.BytesIO(data)) as im:
-                im.verify()
             cache.parent.mkdir(parents=True, exist_ok=True)
             cache.write_bytes(data)
             return data
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                raise Missing(url) from None
+            if attempt == 4:
+                raise
+            time.sleep(2 ** attempt * (3 if e.code == 429 else 1))
         except Exception:
-            if attempt == 2:
+            if attempt == 4:
                 raise
             time.sleep(2 ** attempt)
 
 
-def process(data, target, still, url, ident, name, style, variant):
+def build_catalog(cache):
+    def rows(name):
+        text = fetch(f"{CSV_URL}/{name}.csv", cache / "csv" / f"{name}.csv").decode("utf-8")
+        return list(csv.DictReader(io.StringIO(text)))
+    types = {r["id"]: r["identifier"] for r in rows("types")}
+    names = {r["pokemon_species_id"]: r for r in rows("pokemon_species_names") if r["local_language_id"] == ENGLISH}
+    by_pokemon = {}
+    for r in rows("pokemon_types"):
+        by_pokemon.setdefault(r["pokemon_id"], []).append((int(r["slot"]), types[r["type_id"]]))
+    catalog = []
+    for r in rows("pokemon_species"):
+        dex = int(r["id"])
+        if dex > MAX_DEX:
+            continue
+        n = names.get(r["id"], {})
+        genus = (n.get("genus") or "").replace(" Pokémon", "").strip()
+        catalog.append({
+            "dex": dex, "id": r["identifier"], "name": n.get("name") or r["identifier"].title(),
+            "genus": genus, "types": [t for _, t in sorted(by_pokemon.get(r["id"], []))],
+            "generation": int(r["generation_id"]),
+            "evolvesFrom": int(r["evolves_from_species_id"]) if r["evolves_from_species_id"] else None,
+            "legendary": r["is_legendary"] == "1", "mythical": r["is_mythical"] == "1",
+            "styles": {},
+        })
+    catalog.sort(key=lambda e: e["dex"])
+    return catalog
+
+
+def save_png(image, path):
+    """Paletted PNG when the image has at most 255 colours (exact), RGBA otherwise."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    colors = image.getcolors(maxcolors=256)
+    if colors is not None:
+        image.quantize(colors=256, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE).save(path, optimize=True)
+    else:
+        image.save(path, optimize=True)
+
+
+def process(data, target, still, url, entry, style, variant, step=1):
     with Image.open(io.BytesIO(data)) as im:
         frames, durations = [], []
         count = getattr(im, "n_frames", 1)
@@ -70,6 +123,9 @@ def process(data, target, still, url, ident, name, style, variant):
             frames.append(im.convert("RGBA"))  # Pillow composites GIF/APNG disposal and partial frames.
             d = im.info.get("duration")
             durations.append(STILL_MS if count == 1 else max(20, int(round(d)) if d else 100))
+    if step > 1 and len(frames) > step:
+        frames = frames[::step]
+        durations = [sum(durations[i:i + step]) for i in range(0, len(durations), step)]
     boxes = [b for b in (f.getchannel("A").getbbox() for f in frames) if b]
     if not boxes:
         raise ValueError("empty animation")
@@ -80,18 +136,15 @@ def process(data, target, still, url, ident, name, style, variant):
     sheet = Image.new("RGBA", (fw * cols, fh * rows), (0, 0, 0, 0))
     for i, f in enumerate(frames):
         sheet.paste(f.crop(union), ((i % cols) * fw, (i // cols) * fh))
-    target.mkdir(parents=True, exist_ok=True)
-    sheet.save(target / "sheet.png", optimize=True)
-    still.parent.mkdir(parents=True, exist_ok=True)
-    frames[0].crop(union).save(still, optimize=True)
+    save_png(sheet, target / "sheet.png")
+    save_png(frames[0].crop(union), still)
     manifest = {
-        "id": name, "dexNumber": ident, "style": style, "variant": variant, "source": url,
+        "id": entry["id"], "dexNumber": entry["dex"], "style": style, "variant": variant, "source": url,
         "sha256": hashlib.sha256(data).hexdigest(),
         "frameWidth": fw, "frameHeight": fh, "columns": cols, "frameCount": len(frames),
         "durationsMs": durations, "totalDurationMs": sum(durations),
     }
-    (target / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
-    return manifest
+    (target / "manifest.json").write_text(json.dumps(manifest, separators=(",", ":")) + "\n")
 
 
 def main():
@@ -99,39 +152,77 @@ def main():
     p.add_argument("--out", type=Path, default=ROOT / "PokeWatch/Resources/ImportedSprites")
     p.add_argument("--stills", type=Path, default=ROOT / "PokeWatch/Resources/ImportedStills")
     p.add_argument("--cache", type=Path, default=ROOT / "build/SpriteSource")
-    p.add_argument("--normal-only", action="store_true")
-    p.add_argument("--ids", type=int, nargs="+", default=list(POKEMON))
+    p.add_argument("--shiny", action="store_true", help="also import shiny variants (too large for the watch app)")
+    p.add_argument("--full-modern", action="store_true", help="keep every Modern frame (too large for the watch app)")
+    p.add_argument("--ids", type=int, nargs="+", help="national dex numbers (default: all)")
     p.add_argument("--styles", nargs="+", default=list(STYLES), choices=list(STYLES))
+    p.add_argument("--jobs", type=int, default=16)
+    p.add_argument("--max-mb", type=float, default=64,
+                   help="fail when sprites + stills exceed this (the watch app as a whole must stay under 75 MB)")
     a = p.parse_args()
-    unknown = set(a.ids) - POKEMON.keys()
-    if unknown:
-        p.error(f"unknown ids: {sorted(unknown)}")
-    results, skipped, failures = [], [], []
+
+    catalog = build_catalog(a.cache)
+    wanted = set(a.ids) if a.ids else {e["dex"] for e in catalog}
+    entries = [e for e in catalog if e["dex"] in wanted]
+
+    tasks = []
     for style in a.styles:
         top, normal_path, shiny_path = STYLES[style]
-        for ident in a.ids:
-            name = POKEMON[ident]
-            if ident > top:
-                skipped.append(f"{style}/{name}")
+        for e in entries:
+            if e["dex"] > top:
                 continue
-            variants = [("normal", normal_path)] + ([] if a.normal_only or not shiny_path else [("shiny", shiny_path)])
+            variants = [("normal", normal_path)] + ([("shiny", shiny_path)] if a.shiny and shiny_path else [])
             for variant, path in variants:
-                url = f"{ROOT_URL}/{path.format(n=ident)}"
-                ext = path.rsplit(".", 1)[1]
-                try:
-                    data = fetch(url, a.cache / style / variant / f"{name}.{ext}")
-                    m = process(data, a.out / style / name / variant, a.stills / style / name / f"{variant}.png",
-                                url, ident, name, style, variant)
-                    results.append(m)
-                    print(f"{style}/{name}/{variant}: {m['frameCount']} frames {m['frameWidth']}x{m['frameHeight']}")
-                except Exception as e:  # noqa: BLE001 - report and continue
-                    failures.append({"path": f"{style}/{name}/{variant}", "url": url, "error": str(e)})
-                    print(f"FAILED {style}/{name}/{variant}: {e}", file=sys.stderr)
-    a.out.mkdir(parents=True, exist_ok=True)
-    (a.out / "index.json").write_text(json.dumps({
-        "sprites": [f"{r['style']}/{r['id']}/{r['variant']}" for r in results],
-        "notInGeneration": skipped, "failures": failures}, indent=2) + "\n")
-    print(f"{len(results)} imported, {len(skipped)} not in that generation, {len(failures)} failed")
+                tasks.append((style, e, variant, path))
+
+    lock = threading.Lock()
+    missing, failures, done = [], [], [0]
+
+    def run(task):
+        style, e, variant, path = task
+        url = f"{SPRITES_URL}/{path.format(n=e['dex'])}"
+        ext = path.rsplit(".", 1)[1]
+        try:
+            data = fetch(url, a.cache / style / variant / f"{e['id']}.{ext}")
+            step = 1 if a.full_modern else DECIMATE.get(style, 1)
+            process(data, a.out / style / e["id"] / variant, a.stills / style / e["id"] / f"{variant}.png",
+                    url, e, style, variant, step)
+            with lock:
+                e["styles"].setdefault(style, []).append(variant)
+        except Missing:
+            with lock:
+                missing.append(f"{style}/{e['id']}/{variant}")
+        except Exception as ex:  # noqa: BLE001 - report and continue
+            with lock:
+                failures.append({"path": f"{style}/{e['id']}/{variant}", "url": url, "error": str(ex)})
+        with lock:
+            done[0] += 1
+            if done[0] % 250 == 0:
+                print(f"  {done[0]}/{len(tasks)}", flush=True)
+
+    with ThreadPoolExecutor(max_workers=a.jobs) as pool:
+        for f in as_completed([pool.submit(run, t) for t in tasks]):
+            f.result()
+
+    for e in entries:
+        for v in e["styles"].values():
+            v.sort()
+    listed = [e for e in entries if e["styles"]]
+    for folder in (a.out, a.stills):
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / "catalog.json").write_text(json.dumps(listed, ensure_ascii=False, separators=(",", ":")) + "\n")
+    (a.out / "index.json").write_text(json.dumps({"missingUpstream": sorted(missing), "failures": failures}, indent=1) + "\n")
+    def megabytes(folder):
+        return sum(f.stat().st_size for f in folder.rglob("*") if f.is_file()) / 1e6
+    total = megabytes(a.out) + megabytes(a.stills)
+    print(f"sprites {megabytes(a.out):.1f} MB, stills {megabytes(a.stills):.1f} MB")
+    if total > a.max_mb:
+        print(f"TOO LARGE: {total:.1f} MB > {a.max_mb} MB budget (Apple caps watch apps at 75 MB)", file=sys.stderr)
+        raise SystemExit(2)
+    print(f"{len(tasks) - len(missing) - len(failures)} imported, {len(missing)} missing upstream, "
+          f"{len(failures)} failed; {len(listed)} Pokémon in the catalog")
+    for f in failures[:10]:
+        print(f"FAILED {f['path']}: {f['error']}", file=sys.stderr)
     if failures:
         raise SystemExit(1)
 

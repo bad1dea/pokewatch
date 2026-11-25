@@ -1,5 +1,7 @@
 # Known platform limitations
 
+- **Return to Clock is capped at one hour.** With Return to App on, raising the wrist shows PokéWatch
+  for up to an hour after last use; then watchOS returns to the system face. No public API extends it.
 - **Not a real watch face.** Apple doesn't allow third-party watch faces. PokéWatch is an app
   shown on wrist raise via Return to Clock, plus complications on Apple's faces. See ALWAYS_ON.md.
 - **System time overlay.** watchOS draws its own time in the top-right corner of every app. Layouts
@@ -8,6 +10,12 @@
   simulator screenshots are rectangles and hide the problem. `Components/ScreenShape.swift` holds the
   measured profile, faces inset corner content from it, and `Scripts/check_clipping.py` fails any
   screenshot with lit pixels under the mask.
+- **75 MB app cap.** Apple limits a watchOS app to 75 MB uncompressed. The bundled sprites are normal
+  colours only, with the Modern style at half its frame rate (about 61 MB of art). Shiny sprites and
+  full-rate Modern are planned for a future iPhone companion that transfers packs to the watch.
+  `Scripts/import_sprites.py` fails the build if the art exceeds 64 MB.
+- **14 Gen IX Pokémon** (e.g. the Paradox "Iron" forms, Ogerpon, Terapagos, Pecharunt) have no
+  sprites in the upstream repository yet, so they are not listed.
 - **Imported sprites can't close their eyes.** The game animations have no sleeping frames, so
   "asleep" (and Always-On) shows the still first frame, dimmed, with Zzz. The fallback pixel art does
   blink and sleep.

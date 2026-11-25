@@ -61,7 +61,10 @@ extension AppModel {
         let baseMood = mood(now: realDate)
         let mood: Mood = dimmed || (style == .sleeping && launch.mood == nil) ? .sleeping : baseMood
         let t = realDate.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 86_400)
-        let art = ArtChoice(style: style == .yellow ? .gen1 : settings.spriteStyle, shiny: settings.shiny)
+        // The Yellow face uses Gen I art; Pokémon from later generations keep the chosen style
+        // (drawn in the face's four shades).
+        let yellowGen1 = style == .yellow && registry.isAvailable(c.id, in: .gen1)
+        let art = ArtChoice(style: yellowGen1 ? .gen1 : settings.spriteStyle, shiny: settings.shiny)
         let clip = SpriteLibrary.shared.clip(for: c.id, style: art.style, shiny: art.shiny)
         let input = AnimationInput(time: t, mood: mood, variant: settings.variant, motionScale: policy.motionScale,
                                    wakeElapsed: wakeStart.map { realDate.timeIntervalSince($0) },
