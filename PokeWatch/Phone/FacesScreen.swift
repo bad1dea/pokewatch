@@ -39,6 +39,7 @@ struct FacesScreen: View {
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity)
             .background(RoundedRectangle(cornerRadius: 18).stroke(selected ? Palette.electric : .clear, lineWidth: 1.5))
+            .contentShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(selected ? .isSelected : [])

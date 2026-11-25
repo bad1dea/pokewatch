@@ -20,6 +20,9 @@ struct WatchFacePreview: View {
                 .scaleEffect(k, anchor: .topLeading)
                 .frame(width: width, height: Self.screen.height * k, alignment: .topLeading)
         }
+        // Faces have their own tap targets (the companion); in a preview those would
+        // swallow the tap meant for the surrounding button.
+        .allowsHitTesting(false)
         .padding(bezel)
         .background(WatchScreenShape(expand: bezel / k).scale(k, anchor: .topLeading)
             .fill(Color(white: 0.09))
