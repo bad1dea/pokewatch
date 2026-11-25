@@ -68,6 +68,7 @@ targets:
         WKSupportsAlwaysOnDisplay: true
         LSApplicationCategoryType: public.app-category.lifestyle
         NSHealthShareUsageDescription: PokéWatch reads today's steps, active energy, exercise minutes and activity rings so your Pokémon can react to them. Heart rate is read only if you turn it on. Nothing leaves your watch.
+        NSHealthUpdateUsageDescription: PokéWatch never writes to Health. It only reads the activity data described above.
         CFBundleURLTypes:
           - CFBundleURLName: ng.khuo.pokewatch
             CFBundleURLSchemes: [pokewatch]
@@ -115,6 +116,7 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSHealthShareUsageDescription: PokéWatch complications read today's step count to show progress. Nothing leaves your watch.
+        NSHealthUpdateUsageDescription: PokéWatch never writes to Health. It only reads the activity data described above.
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:
