@@ -1,7 +1,8 @@
 name: Apple setup
 
-# Safe to run again: registers ng.khuo.pokewatch and ng.khuo.pokewatch.widgets with HealthKit and makes their
-# App Store profiles. They come back as an artifact; store them as DIST_PROFILE_BASE64 and
+# Safe to run again: registers ng.khuo.pokewatch (container), ng.khuo.pokewatch.watchkitapp and
+# ng.khuo.pokewatch.watchkitapp.widgets (HealthKit) and makes their App Store profiles. Every run remakes the
+# profiles; store the artifact's files as DIST_PROFILE_BASE64, DIST_PROFILE_WATCH_BASE64 and
 # DIST_PROFILE_WIDGETS_BASE64.
 on:
   workflow_dispatch:

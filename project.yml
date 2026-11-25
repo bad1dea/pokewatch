@@ -4,6 +4,7 @@ options:
   bundleIdPrefix: ng.khuo
   deploymentTarget:
     watchOS: "26.0"
+    iOS: "26.0"
   createIntermediateGroups: true
   developmentLanguage: en
   groupSortPosition: top
@@ -18,11 +19,35 @@ settings:
     SWIFT_STRICT_CONCURRENCY: minimal
     ENABLE_USER_SCRIPT_SANDBOXING: YES
     GENERATE_INFOPLIST_FILE: NO
-    TARGETED_DEVICE_FAMILY: "4"
-    SUPPORTED_PLATFORMS: "watchos watchsimulator"
-    SDKROOT: watchos
 
 targets:
+  # App Store Connect only takes a watch-only app inside Apple's watch-only container:
+  # an empty iOS wrapper that carries the watch app in Watch/. This is what Xcode's
+  # "Watch-only App" template generates. Archive this target to ship.
+  PokeWatchContainer:
+    type: application.watchapp2-container
+    platform: iOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ng.khuo.pokewatch
+        PRODUCT_NAME: PokeWatch
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: PokéWatch
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        TARGETED_DEVICE_FAMILY: "1"
+      configs:
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: Apple Distribution
+          PROVISIONING_PROFILE_SPECIFIER: PokeWatch AppStore
+    dependencies:
+      - target: PokeWatch
+        embed: true
+        copy:
+          destination: productsDirectory
+          subpath: $(CONTENTS_FOLDER_PATH)/Watch
+
   PokeWatch:
     type: application
     platform: watchOS
@@ -40,6 +65,7 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         WKApplication: true
         WKWatchOnly: true
+        WKCompanionAppBundleIdentifier: ng.khuo.pokewatch
         WKSupportsAlwaysOnDisplay: true
         LSApplicationCategoryType: public.app-category.lifestyle
         NSHealthShareUsageDescription: PokéWatch reads today's steps, active energy, exercise minutes and activity rings so your Pokémon can react to them. Heart rate is read only if you turn it on. Nothing leaves your watch.
@@ -54,10 +80,8 @@ targets:
         com.apple.developer.healthkit.access: []
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: ng.khuo.pokewatch
+        PRODUCT_BUNDLE_IDENTIFIER: ng.khuo.pokewatch.watchkitapp
         PRODUCT_NAME: PokeWatch
-        # Watch-only app: install into the archive (XcodeGen's watchOS default assumes an iOS container).
-        SKIP_INSTALL: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_PREVIEWS: YES
@@ -65,7 +89,7 @@ targets:
         Release:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: Apple Distribution
-          PROVISIONING_PROFILE_SPECIFIER: PokeWatch AppStore
+          PROVISIONING_PROFILE_SPECIFIER: PokeWatch Watch AppStore
     dependencies:
       - target: PokeWatchWidgets
         embed: true
@@ -101,7 +125,7 @@ targets:
         com.apple.developer.healthkit.access: []
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: ng.khuo.pokewatch.widgets
+        PRODUCT_BUNDLE_IDENTIFIER: ng.khuo.pokewatch.watchkitapp.widgets
         PRODUCT_NAME: PokeWatchWidgets
         SKIP_INSTALL: YES
         ENABLE_PREVIEWS: YES
@@ -148,3 +172,10 @@ schemes:
         PokeWatch: all
     run:
       config: Debug
+  # Archive scheme for App Store / TestFlight (destination generic/platform=iOS).
+  PokeWatchContainer:
+    build:
+      targets:
+        PokeWatchContainer: all
+    archive:
+      config: Release

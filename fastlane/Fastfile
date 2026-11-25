@@ -7,14 +7,16 @@ default_platform(:ios)
 # PokéWatch is a watch-only app. App Store Connect files it under an iOS app record; testers install it from
 # TestFlight on the paired iPhone, which pushes it to the watch.
 
+# The App Store record belongs to the container; the watch app and its widget extension live inside it.
 APP_ID = "ng.khuo.pokewatch".freeze
-WIDGET_ID = "ng.khuo.pokewatch.widgets".freeze
-# bundle id => [App ID name, App Store profile name, file written by `setup`]
+WATCH_ID = "ng.khuo.pokewatch.watchkitapp".freeze
+WIDGET_ID = "ng.khuo.pokewatch.watchkitapp.widgets".freeze
+# bundle id => [App ID name, App Store profile name, file written by `setup`, capabilities]
 SIGNED = {
-  APP_ID => ["PokeWatch", "PokeWatch AppStore", "profile.mobileprovision"],
-  WIDGET_ID => ["PokeWatch Widgets", "PokeWatch Widgets AppStore", "profile-widgets.mobileprovision"]
+  APP_ID => ["PokeWatch", "PokeWatch AppStore", "profile.mobileprovision", []],
+  WATCH_ID => ["PokeWatch Watch App", "PokeWatch Watch AppStore", "profile-watch.mobileprovision", %w[HEALTHKIT]],
+  WIDGET_ID => ["PokeWatch Widgets", "PokeWatch Widgets AppStore", "profile-widgets.mobileprovision", %w[HEALTHKIT]]
 }.freeze
-CAPABILITIES = %w[HEALTHKIT].freeze
 
 # A new app has no TestFlight groups; the internal one gets PrivateGallery's internal testers.
 TESTER_SOURCE_ID = "pro.imnot.privategallery".freeze
@@ -91,7 +93,7 @@ def hand_to_testers(build_number)
 end
 
 platform :ios do
-  # Registers both bundle ids with HealthKit and makes their App Store profiles against the certificate with
+  # Registers the three bundle ids (HealthKit on the watch app and widgets) and makes their App Store profiles against the certificate with
   # DIST_CERT_SERIAL. The App Store Connect app record can't be made through the API; this only says whether it exists.
   desc "Register bundle ids and make the App Store profiles"
   lane :setup do
@@ -101,12 +103,12 @@ platform :ios do
     cert = certs.find { |c| c.serial_number.to_s.downcase.sub(/^0+/, "") == serial }
     UI.user_error!("no distribution certificate with serial #{serial}") unless cert
 
-    SIGNED.each do |identifier, (name, profile_name, file)|
+    SIGNED.each do |identifier, (name, profile_name, file, capabilities)|
       bid = Spaceship::ConnectAPI::BundleId.find(identifier) ||
             Spaceship::ConnectAPI::BundleId.create(name: name, identifier: identifier, platform: "IOS")
       UI.message("bundle id #{identifier} (#{bid.id})")
       have = bid.get_capabilities.map(&:capability_type)
-      (CAPABILITIES - have).each do |cap|
+      (capabilities - have).each do |cap|
         bid.create_capability(cap)
         UI.success("enabled #{cap} on #{identifier}")
       end
@@ -161,15 +163,15 @@ platform :ios do
     team = ENV.fetch("DEVELOPMENT_TEAM")
     build_app(
       project: project,
-      scheme: "PokeWatch",
+      scheme: "PokeWatchContainer",
       configuration: "Release",
-      destination: "generic/platform=watchOS",
-      export_method: "app-store",
+      destination: "generic/platform=iOS",
+      export_method: "app-store-connect",
       xcargs: "DEVELOPMENT_TEAM=#{team} CURRENT_PROJECT_VERSION=#{build_no}",
       export_options: {
         signingStyle: "manual",
         teamID: team,
-        provisioningProfiles: SIGNED.to_h { |id, (_, profile, _)| [id, profile] }
+        provisioningProfiles: SIGNED.to_h { |id, (_, profile, _, _)| [id, profile] }
       },
       output_directory: File.join(ROOT, "build"),
       output_name: "PokeWatch.ipa",

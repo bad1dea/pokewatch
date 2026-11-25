@@ -2,17 +2,19 @@
 
 ## TestFlight (main route)
 
-PokéWatch is watch-only. App Store Connect files it under an iOS app record; TestFlight on the paired
-iPhone installs it on the watch.
+PokéWatch is watch-only. App Store Connect only accepts it inside Apple's watch-only container (target
+`PokeWatchContainer`, an empty iOS wrapper with the watch app in `Watch/`), filed under an iOS app record.
+TestFlight on the paired iPhone installs it on the watch; nothing appears on the iPhone home screen.
 
 One-time setup:
 
 1. Repository secrets (shared with the other apps): `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8_BASE64`,
    `DEVELOPMENT_TEAM`, `DIST_CERT_P12_BASE64`, `DIST_CERT_PASSWORD`.
-2. Run **Actions › Apple setup**. It registers `ng.khuo.pokewatch` and `ng.khuo.pokewatch.widgets` with
-   HealthKit and makes the App Store profiles "PokeWatch AppStore" and "PokeWatch Widgets AppStore".
-   Download the `pokewatch-profiles` artifact and store the files base64-encoded as
-   `DIST_PROFILE_BASE64` and `DIST_PROFILE_WIDGETS_BASE64`.
+2. Run **Actions › Apple setup**. It registers `ng.khuo.pokewatch` (the iOS watch-only container that
+   App Store Connect requires), `ng.khuo.pokewatch.watchkitapp` and `ng.khuo.pokewatch.watchkitapp.widgets`
+   (both with HealthKit), and makes their App Store profiles. Every run remakes the profiles: store the
+   `pokewatch-profiles` artifact's files base64-encoded as `DIST_PROFILE_BASE64`, `DIST_PROFILE_WATCH_BASE64`
+   and `DIST_PROFILE_WIDGETS_BASE64`.
 3. App Store Connect › Apps › **New App**: platform iOS, bundle ID `ng.khuo.pokewatch`, any free name
    and SKU. (The API can't create app records.) Run Apple setup again to create the internal
    TestFlight group.
