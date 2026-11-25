@@ -1,0 +1,33 @@
+{
+  "id": "psyduck", "name": "Psyduck", "dexNumber": 54, "category": "Duck", "type": "Water",
+  "entry": "Permanently puzzled by the time. Clutches its head when the battery is low, and nobody knows why.",
+  "element": "confused", "accentHex": "#FFD45C",
+  "palette": { "K": "#5A4210", "Y": "#FFD45C", "y": "#D9A836", "B": "#FFF2C4", "b": "#E8CF90", "E": "#1A1A1A", "W": "#FFFFFF" },
+  "eyes": { "keys": ["E", "W"], "fill": "Y", "line": "K" },
+  "earRows": 3,
+  "personality": { "idleStyle": "wobble", "energy": 0.4, "sleepiness": 0.5, "bobSpeed": 0.9, "bobAmplitude": 0.6,
+    "blinkInterval": 6.5, "hopHeight": 2, "nightOwl": false, "sleepsWhenIdle": false, "stepLover": false },
+  "lines": { "idle": "Psy?", "happy": "Psy-yi!", "excited": "Psyduck?!", "celebrate": "PSYYY!", "tired": "psy...", "charging": "Duck?", "sleep": "zzz", "wake": "Psy...?" },
+  "sprite": [
+    ".........K..K........",
+    "........K.KK.K.......",
+    ".........KYYK........",
+    ".....KKKKYYYYKKKK....",
+    "....KYYYYYYYYYYYYK...",
+    "...KYYYYYYYYYYYYYYK..",
+    "...KYWWWYYYYYYWWWYK..",
+    "...KYWEWYYYYYYWEWYK..",
+    "...KYWWWYYYYYYWWWYK..",
+    "...KYYYYKKKKKKYYYYK..",
+    "...KYYYKBBBBBBKYYYK..",
+    "....KYYKBbbbbBKYYK...",
+    "....KKYYKKKKKKYYKK...",
+    "...KYKYYYYYYYYYYKYK..",
+    "..KYYKYYYYYYYYYYKYYK.",
+    "..KYK.KYYYYYYYYK.KYK.",
+    "......KYYYYYYYYK.....",
+    "......KBBKKKKBBK.....",
+    ".....KBBBK..KBBBK....",
+    ".....KKKK....KKKK...."
+  ]
+}

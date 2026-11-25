@@ -1,0 +1,32 @@
+{
+  "id": "mew", "name": "Mew", "dexNumber": 151, "category": "New Species", "type": "Psychic",
+  "entry": "Drifts around the dial and loops its long tail through the numbers. Rarely sits still.",
+  "element": "psychic", "accentHex": "#FF9ACB",
+  "palette": { "K": "#5A2448", "P": "#FFB4D6", "p": "#E888B6", "E": "#2B6FD9", "W": "#FFFFFF" },
+  "eyes": { "keys": ["E", "W"], "fill": "P", "line": "K" },
+  "earRows": 3,
+  "personality": { "idleStyle": "float", "energy": 0.85, "sleepiness": 0.3, "bobSpeed": 1.4, "bobAmplitude": 2.0,
+    "blinkInterval": 3.0, "hopHeight": 4, "nightOwl": false, "sleepsWhenIdle": false, "stepLover": false },
+  "lines": { "idle": "Mew?", "happy": "Mew!", "excited": "Mew mew!", "celebrate": "MEEEW!", "tired": "mew...", "charging": "Mew~", "sleep": "zzz", "wake": "Mew!" },
+  "sprite": [
+    ".K.........K..........",
+    "KPK.......KPK.........",
+    "KPPKKKKKKKPPK.........",
+    ".KPPPPPPPPPK..........",
+    "KPPPPPPPPPPPK.........",
+    "KPPWEPPPPWEPPK........",
+    "KPPWEPPPPWEPPK........",
+    "KPPEEPPPPEEPPK........",
+    ".KPPPPPKPPPPK.........",
+    "..KKPPPPPPKK..........",
+    "...KPPPPPPK...........",
+    "..KPKPPPPKPK..........",
+    "..KPPPPPPPPK......KK..",
+    "...KPPPPPPK......KPPK.",
+    "...KPPPPPPPK....KPK...",
+    "..KPPKKKKPPPK...KPK...",
+    "..KPK....KPPKKKKPK....",
+    "..KK......KPPPPPK.....",
+    "...........KKKKK......"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "id": "eevee", "name": "Eevee", "dexNumber": 133, "category": "Evolution", "type": "Normal",
+  "entry": "Curious about everything on your wrist. Its fluffy collar puffs up whenever it feels proud of you.",
+  "element": "sparkle", "accentHex": "#E8A75C",
+  "palette": { "K": "#4A2C14", "B": "#C98A4B", "b": "#8E5A2C", "C": "#F5E2B4", "c": "#D9BE86", "E": "#2A160A", "W": "#FFFFFF" },
+  "eyes": { "keys": ["E", "W"], "fill": "B", "line": "K" },
+  "earRows": 6,
+  "personality": { "idleStyle": "sway", "energy": 0.7, "sleepiness": 0.4, "bobSpeed": 1.6, "bobAmplitude": 0.8,
+    "blinkInterval": 3.8, "hopHeight": 3, "nightOwl": false, "sleepsWhenIdle": false, "stepLover": true },
+  "lines": { "idle": "Vui?", "happy": "Vee!", "excited": "Ee-vee!", "celebrate": "EEVEE!", "tired": "vui...", "charging": "Vee~", "sleep": "zzz", "wake": "Vee?" },
+  "sprite": [
+    ".K..................K.",
+    "KBK................KBK",
+    "KBBK..............KBBK",
+    "KBbBK............KBbBK",
+    ".KBbBK..........KBbBK.",
+    ".KBBbBKKKKKKKKKKBbBBK.",
+    "..KBBBBBBBBBBBBBBBBK..",
+    "..KBBBBBBBBBBBBBBBBK..",
+    ".KBBBWEBBBBBBBBWEBBBK.",
+    ".KBBBEEBBBBBBBBEEBBBK.",
+    ".KBBBBBBBBKKBBBBBBBBK.",
+    "..KBBBBBBBBBBBBBBBBK..",
+    ".KCCKBBBBBBBBBBBBKCCK.",
+    "KCCCCKKKKKKKKKKKKCCCCK",
+    "KCCcCCCCCCCCCCCCCCcCCK",
+    ".KCCCCCCCcCCcCCCCCCCK.",
+    "..KBKCCCCCCCCCCCCKBK..",
+    "..KBBKBBBBBBBBBBKBBK..",
+    "..KBBKBBBKKKKBBBKBBK..",
+    "...KK.KKK....KKK.KK..."
+  ]
+}

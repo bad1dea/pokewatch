@@ -1,0 +1,32 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v5
+      - name: Select Xcode
+        run: |
+          xc="$(ls -d /Applications/Xcode_27*.app | sort -V | tail -1)"
+          sudo xcode-select -switch "$xc"
+          xcodebuild -version
+      - run: brew install xcodegen
+      - run: xcodegen generate --spec project.yml
+      - name: Build for the watch simulator
+        run: |
+          xcodebuild -project PokeWatch.xcodeproj -scheme PokeWatch -configuration Debug \
+            -destination 'generic/platform=watchOS Simulator' -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO build
+      - name: Unit tests (when a watchOS simulator runtime is installed)
+        run: |
+          if xcrun simctl list runtimes | grep -q watchOS; then
+            Scripts/test.sh
+          else
+            echo "No watchOS simulator runtime on this runner; skipping tests."
+          fi

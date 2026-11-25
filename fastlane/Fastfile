@@ -1,0 +1,184 @@
+default_platform(:ios)
+
+# Signing is manual: the workflow puts the distribution certificate and the two App Store profiles in a temporary
+# keychain, and the Release config in project.yml names the profiles. The App Store Connect key registers the
+# bundle ids, uploads, and hands the build to testers.
+#
+# PokéWatch is a watch-only app. App Store Connect files it under an iOS app record; testers install it from
+# TestFlight on the paired iPhone, which pushes it to the watch.
+
+APP_ID = "ng.khuo.pokewatch".freeze
+WIDGET_ID = "ng.khuo.pokewatch.widgets".freeze
+# bundle id => [App ID name, App Store profile name, file written by `setup`]
+SIGNED = {
+  APP_ID => ["PokeWatch", "PokeWatch AppStore", "profile.mobileprovision"],
+  WIDGET_ID => ["PokeWatch Widgets", "PokeWatch Widgets AppStore", "profile-widgets.mobileprovision"]
+}.freeze
+CAPABILITIES = %w[HEALTHKIT].freeze
+
+# A new app has no TestFlight groups; the internal one gets PrivateGallery's internal testers.
+TESTER_SOURCE_ID = "pro.imnot.privategallery".freeze
+
+ROOT = File.expand_path("..", __dir__)
+
+def asc_login
+  require "spaceship"
+  require "base64"
+  Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.create(
+    key_id: ENV.fetch("ASC_KEY_ID"),
+    issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+    key: Base64.decode64(ENV.fetch("ASC_KEY_P8_BASE64"))
+  )
+end
+
+def internal_group(app)
+  group = (app.get_beta_groups rescue []).find(&:is_internal_group)
+  unless group
+    # Spaceship's create_beta_group always sends the publicLink fields, which Apple refuses for an internal group.
+    body = {
+      data: {
+        type: "betaGroups",
+        attributes: { name: "Internal", isInternalGroup: true, hasAccessToAllBuilds: true },
+        relationships: { app: { data: { type: "apps", id: app.id } } }
+      }
+    }
+    group = Spaceship::ConnectAPI.client.test_flight_request_client.post("v1/betaGroups", body).to_models.first
+    UI.success("created internal beta group '#{group.name}'")
+  end
+
+  have = Spaceship::ConnectAPI.get_beta_testers(filter: { betaGroups: group.id }).all_pages.flat_map(&:to_models)
+  if have.empty?
+    source = Spaceship::ConnectAPI::App.find(TESTER_SOURCE_ID)
+    source_group = source && (source.get_beta_groups rescue []).find(&:is_internal_group)
+    testers = source_group ? Spaceship::ConnectAPI.get_beta_testers(filter: { betaGroups: source_group.id }).all_pages.flat_map(&:to_models) : []
+    testers.each do |t|
+      Spaceship::ConnectAPI.post_beta_tester_assignment(
+        beta_group_ids: [group.id],
+        attributes: { email: t.email, firstName: t.first_name, lastName: t.last_name }.compact
+      )
+      # The repo is public, and so are its logs: no addresses here.
+      UI.success("added a tester to '#{group.name}'")
+    rescue StandardError => e
+      UI.important("could not add a tester: #{e.message}. Add them in TestFlight > Internal Testing.")
+    end
+  end
+  group
+end
+
+# The ConnectAPI list can lag a few seconds behind a build turning VALID, hence the retries.
+def hand_to_testers(build_number)
+  app = Spaceship::ConnectAPI::App.find(APP_ID)
+  group = internal_group(app)
+  build = nil
+  10.times do |i|
+    builds = Spaceship::ConnectAPI::Build.all(app_id: app.id, sort: "-version", limit: 8)
+    found = build_number.to_s.empty? ? builds.find { |b| b.processing_state == "VALID" } : builds.find { |b| b.version == build_number.to_s }
+    if found&.processing_state == "VALID"
+      build = found
+      break
+    end
+    UI.message("build #{build_number} is #{found&.processing_state || 'not listed yet'}; try #{i + 1}/10")
+    sleep(20) unless i == 9
+  end
+  UI.user_error!("build #{build_number} never became VALID") unless build
+
+  if group.has_access_to_all_builds
+    UI.success("build #{build.version} is in '#{group.name}' (the group gets every build)")
+  else
+    build.add_beta_groups(beta_groups: [group])
+    UI.success("build #{build.version} added to '#{group.name}'")
+  end
+end
+
+platform :ios do
+  # Registers both bundle ids with HealthKit and makes their App Store profiles against the certificate with
+  # DIST_CERT_SERIAL. The App Store Connect app record can't be made through the API; this only says whether it exists.
+  desc "Register bundle ids and make the App Store profiles"
+  lane :setup do
+    asc_login
+    serial = ENV.fetch("DIST_CERT_SERIAL").downcase.sub(/^0+/, "")
+    certs = Spaceship::ConnectAPI::Certificate.all(filter: { certificateType: "DISTRIBUTION,IOS_DISTRIBUTION" })
+    cert = certs.find { |c| c.serial_number.to_s.downcase.sub(/^0+/, "") == serial }
+    UI.user_error!("no distribution certificate with serial #{serial}") unless cert
+
+    SIGNED.each do |identifier, (name, profile_name, file)|
+      bid = Spaceship::ConnectAPI::BundleId.find(identifier) ||
+            Spaceship::ConnectAPI::BundleId.create(name: name, identifier: identifier, platform: "IOS")
+      UI.message("bundle id #{identifier} (#{bid.id})")
+      have = bid.get_capabilities.map(&:capability_type)
+      (CAPABILITIES - have).each do |cap|
+        bid.create_capability(cap)
+        UI.success("enabled #{cap} on #{identifier}")
+      end
+      Spaceship::ConnectAPI::Profile.all(filter: { name: profile_name }).each(&:delete!)
+      profile = Spaceship::ConnectAPI::Profile.create(
+        name: profile_name, profile_type: "IOS_APP_STORE",
+        bundle_id_id: bid.id, certificate_ids: [cert.id], device_ids: []
+      )
+      out = File.join(ROOT, "build", file)
+      FileUtils.mkdir_p(File.dirname(out))
+      File.binwrite(out, Base64.decode64(profile.profile_content))
+      UI.success("made profile '#{profile_name}', expires #{profile.expiration_date}")
+    end
+
+    app = Spaceship::ConnectAPI::App.find(APP_ID)
+    if app
+      UI.success("App Store Connect record: #{app.name} (#{app.id})")
+      internal_group(app)
+    else
+      UI.important("no App Store Connect record for #{APP_ID} yet; add it in the web UI (New App, iOS, bundle id #{APP_ID})")
+    end
+  end
+
+  desc "Print recent TestFlight builds"
+  lane :status do
+    asc_login
+    app = Spaceship::ConnectAPI::App.find(APP_ID)
+    Spaceship::ConnectAPI::Build.all(app_id: app.id, sort: "-version", limit: 10, includes: "buildBetaDetail").each do |b|
+      detail = (b.build_beta_detail rescue nil)
+      UI.message("build #{b.version} processing=#{b.processing_state} internal=#{detail&.internal_build_state} uploaded=#{b.uploaded_date}")
+    end
+  end
+
+  desc "Add a processed build to the internal group (BUILD, or the newest)"
+  lane :distribute do
+    asc_login
+    hand_to_testers(ENV["BUILD"])
+  end
+
+  desc "Build, upload to TestFlight and hand the build to testers"
+  lane :beta do
+    api_key = app_store_connect_api_key(
+      key_id: ENV.fetch("ASC_KEY_ID"),
+      issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+      key_content: ENV.fetch("ASC_KEY_P8_BASE64"),
+      is_key_content_base64: true
+    )
+    build_no = ENV.fetch("GITHUB_RUN_NUMBER", Time.now.to_i.to_s)
+
+    sh("cd #{ROOT} && xcodegen generate --spec project.yml")
+    project = File.join(ROOT, "PokeWatch.xcodeproj")
+    team = ENV.fetch("DEVELOPMENT_TEAM")
+    build_app(
+      project: project,
+      scheme: "PokeWatch",
+      configuration: "Release",
+      destination: "generic/platform=watchOS",
+      export_method: "app-store",
+      xcargs: "DEVELOPMENT_TEAM=#{team} CURRENT_PROJECT_VERSION=#{build_no}",
+      export_options: {
+        signingStyle: "manual",
+        teamID: team,
+        provisioningProfiles: SIGNED.to_h { |id, (_, profile, _)| [id, profile] }
+      },
+      output_directory: File.join(ROOT, "build"),
+      output_name: "PokeWatch.ipa",
+      clean: true
+    )
+
+    upload_to_testflight(api_key: api_key, skip_waiting_for_build_processing: false, distribute_external: false)
+
+    asc_login
+    hand_to_testers(build_no)
+  end
+end

@@ -1,0 +1,2 @@
+app_identifier("ng.khuo.pokewatch")
+# Team ID and the App Store Connect key come from the workflow's secrets.

@@ -1,0 +1,40 @@
+{
+  "id": "pikachu",
+  "name": "Pikachu",
+  "dexNumber": 25,
+  "category": "Mouse",
+  "type": "Electric",
+  "entry": "Stores static in its cheeks and naps wherever the sun is warm. Gets restless when you sit still too long.",
+  "element": "spark",
+  "accentHex": "#FFE100",
+  "palette": { "D": "#3B2A12", "K": "#6B4A12", "Y": "#FFD92E", "y": "#E0A91A", "R": "#FF4B3A", "E": "#241808", "W": "#FFFFFF" },
+  "eyes": { "keys": ["E", "W"], "fill": "Y", "line": "D" },
+  "earRows": 5,
+  "personality": {
+    "idleStyle": "bounce", "energy": 0.9, "sleepiness": 0.3, "bobSpeed": 2.4, "bobAmplitude": 1.0,
+    "blinkInterval": 3.2, "hopHeight": 4, "nightOwl": false, "sleepsWhenIdle": false, "stepLover": true
+  },
+  "lines": { "idle": "Pika?", "happy": "Pika pika!", "excited": "Pi-ka-chu!", "celebrate": "PIKACHUUU!", "tired": "pika...", "charging": "Bzzt!", "sleep": "zzz", "wake": "Pika!" },
+  "sprite": [
+    "DD..................DD.....",
+    "DDD................DDD.....",
+    ".KYK..............KYK......",
+    ".KYYK............KYYK..KKKK",
+    "..KYYK..........KYYK..KYYYK",
+    "..KYYYKKKKKKKKKKYYYK.KYYYK.",
+    "...KYYYYYYYYYYYYYYK..KYYK..",
+    "..KYYYYYYYYYYYYYYYYK..KYYK.",
+    "..KYYWEYYYYYYYYWEYYK..KYK..",
+    "..KYYEEYYYYYYYYEEYYK.KYK...",
+    "..KRRYYYYYDYYDYYYRRK.KYYK..",
+    "..KRRYYYYYYDDYYYYRRKKKYYK..",
+    "...KYYYYYYYYYYYYYYKKyYK....",
+    "...KKYYYYYYYYYYYYKKyKK.....",
+    "..KYKYYYYYYYYYYYYKYKK......",
+    "..KYYKYYYYYYYYYYKYYK.......",
+    "...KKYYYYYYYYYYYYKK........",
+    "....KYYYYYYYYYYYYK.........",
+    "....KYYyKKKKKKyYYK.........",
+    "....KKKK......KKKK........."
+  ]
+}

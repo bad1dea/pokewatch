@@ -1,0 +1,33 @@
+{
+  "id": "gengar", "name": "Gengar", "dexNumber": 94, "category": "Shadow", "type": "Ghost",
+  "entry": "Hides in the black of your watch face and grins at the dark. Most lively after midnight.",
+  "element": "wisp", "accentHex": "#A77BE8",
+  "palette": { "K": "#2A1842", "P": "#7D5BC2", "p": "#5A3D96", "E": "#FF3B4E", "W": "#F4F0FF" },
+  "eyes": { "keys": ["E"], "fill": "P", "line": "K" },
+  "earRows": 4,
+  "personality": { "idleStyle": "float", "energy": 0.6, "sleepiness": 0.2, "bobSpeed": 1.1, "bobAmplitude": 1.6,
+    "blinkInterval": 5.5, "hopHeight": 3, "nightOwl": true, "sleepsWhenIdle": false, "stepLover": false },
+  "lines": { "idle": "Gengar...", "happy": "Heh heh!", "excited": "Gen-gar!", "celebrate": "KEHEHE!", "tired": "gar...", "charging": "Heh~", "sleep": "zzz", "wake": "Boo!" },
+  "sprite": [
+    "..K.....K....K.....K..",
+    ".KPK...KPK..KPK...KPK.",
+    ".KPPK.KPPPKKPPPK.KPPK.",
+    "..KPPKPPPPPPPPPPKPPK..",
+    "..KPPPPPPPPPPPPPPPPK..",
+    ".KPPPPPPPPPPPPPPPPPPK.",
+    ".KPPPEEPPPPPPPPEEPPPK.",
+    ".KPPPPEEPPPPPPEEPPPPK.",
+    "KPPPPPPPPPPPPPPPPPPPPK",
+    "KPPKWWWWWWWWWWWWWWKPPK",
+    "KPPPKWKWWWKKWWWKWKPPPK",
+    "KPPPPKKKKK..KKKKKPPPPK",
+    ".KPPPPPPPPPPPPPPPPPPK.",
+    "KPPKPPPPPPPPPPPPPPKPPK",
+    "KPK.KPPPPPPPPPPPPK.KPK",
+    ".K..KPPPPPppPPPPPK..K.",
+    "....KPPPppppppPPPK....",
+    "....KPPPKKKKKKPPPK....",
+    "....KPPK......KPPK....",
+    "....KKKK......KKKK...."
+  ]
+}

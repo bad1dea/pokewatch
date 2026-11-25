@@ -1,0 +1,33 @@
+{
+  "id": "umbreon", "name": "Umbreon", "dexNumber": 197, "category": "Moonlight", "type": "Dark",
+  "entry": "Its rings glow after dusk. Keeps watch over the dial at night and dims itself to save your battery.",
+  "element": "moon", "accentHex": "#FFD34A",
+  "palette": { "K": "#4A5262", "B": "#232A36", "b": "#171C25", "Y": "#FFD34A", "E": "#E0303A", "W": "#FFFFFF" },
+  "eyes": { "keys": ["E", "W"], "fill": "B", "line": "K" },
+  "earRows": 6,
+  "personality": { "idleStyle": "sway", "energy": 0.5, "sleepiness": 0.3, "bobSpeed": 1.0, "bobAmplitude": 0.6,
+    "blinkInterval": 5.0, "hopHeight": 2, "nightOwl": true, "sleepsWhenIdle": false, "stepLover": false },
+  "lines": { "idle": "Breon.", "happy": "Umbre!", "excited": "Um-bre-on!", "celebrate": "UMBREON!", "tired": "breon...", "charging": "Glow", "sleep": "zzz", "wake": "Breon?" },
+  "sprite": [
+    ".K..................K.",
+    "KBK................KBK",
+    "KBYK..............KYBK",
+    "KBYBK............KBYBK",
+    ".KBYBK..........KBYBK.",
+    ".KBBBBKKKKKKKKKKBBBBK.",
+    "..KBBBBBBBYYBBBBBBBK..",
+    "..KBBBBBBBBBBBBBBBBK..",
+    ".KBBBEWBBBBBBBBWEBBBK.",
+    ".KBBBEEBBBBBBBBEEBBBK.",
+    ".KBBBBBBBBKKBBBBBBBBK.",
+    "..KBBBBBBBBBBBBBBBBK..",
+    "...KKBBBBBBBBBBBBKK...",
+    "..KBBKBBBBBBBBBBKBBK..",
+    ".KBYYKBBBBBBBBBBKYYBK.",
+    ".KBBBKBBBBBBBBBBKBBBK.",
+    "..KBBKBBBBBBBBBBKBBK..",
+    "..KBYKBBBKKKKBBBKYBK..",
+    "..KBBKBBK....KBBKBBK..",
+    "...KK.KK......KK.KK..."
+  ]
+}

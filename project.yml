@@ -1,0 +1,148 @@
+# Generate PokeWatch.xcodeproj with:  Scripts/generate.sh   (XcodeGen 2.44+)
+name: PokeWatch
+options:
+  bundleIdPrefix: ng.khuo
+  deploymentTarget:
+    watchOS: "26.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: "${DEVELOPMENT_TEAM}"
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_STRICT_CONCURRENCY: minimal
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    GENERATE_INFOPLIST_FILE: NO
+    TARGETED_DEVICE_FAMILY: "4"
+    SUPPORTED_PLATFORMS: "watchos watchsimulator"
+    SDKROOT: watchos
+
+targets:
+  PokeWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - path: PokeWatch
+        excludes:
+          - "Widgets/**"
+          - "Tests/**"
+          - "**/*.md"
+    info:
+      path: PokeWatch/App/Info.plist
+      properties:
+        CFBundleDisplayName: PokéWatch
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        WKApplication: true
+        WKWatchOnly: true
+        WKSupportsAlwaysOnDisplay: true
+        LSApplicationCategoryType: public.app-category.lifestyle
+        NSHealthShareUsageDescription: PokéWatch reads today's steps, active energy, exercise minutes and activity rings so your Pokémon can react to them. Heart rate is read only if you turn it on. Nothing leaves your watch.
+        CFBundleURLTypes:
+          - CFBundleURLName: ng.khuo.pokewatch
+            CFBundleURLSchemes: [pokewatch]
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+    entitlements:
+      path: PokeWatch/App/PokeWatch.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ng.khuo.pokewatch
+        PRODUCT_NAME: PokeWatch
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ENABLE_PREVIEWS: YES
+      configs:
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: Apple Distribution
+          PROVISIONING_PROFILE_SPECIFIER: PokeWatch AppStore
+    dependencies:
+      - target: PokeWatchWidgets
+        embed: true
+      - sdk: HealthKit.framework
+      - sdk: WidgetKit.framework
+
+  PokeWatchWidgets:
+    type: app-extension
+    platform: watchOS
+    sources:
+      - PokeWatch/Widgets
+      - PokeWatch/Characters
+      - PokeWatch/Resources/Sprites
+      - PokeWatch/Core/Battery/BatterySnapshot.swift
+      - PokeWatch/Core/Health/ActivitySnapshot.swift
+      - PokeWatch/Core/Health/HealthQueries.swift
+      - PokeWatch/Components/Color+Hex.swift
+      - PokeWatch/Components/SpriteImage.swift
+      - PokeWatch/Components/PokeballBattery.swift
+    info:
+      path: PokeWatch/Widgets/Info.plist
+      properties:
+        CFBundleDisplayName: PokéWatch
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSHealthShareUsageDescription: PokéWatch complications read today's step count to show progress. Nothing leaves your watch.
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: PokeWatch/Widgets/PokeWatchWidgets.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ng.khuo.pokewatch.widgets
+        PRODUCT_NAME: PokeWatchWidgets
+        SKIP_INSTALL: YES
+        ENABLE_PREVIEWS: YES
+      configs:
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: Apple Distribution
+          PROVISIONING_PROFILE_SPECIFIER: PokeWatch Widgets AppStore
+    dependencies:
+      - sdk: HealthKit.framework
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+
+  PokeWatchTests:
+    type: bundle.unit-test
+    platform: watchOS
+    sources:
+      - PokeWatch/Tests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ng.khuo.pokewatch.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/PokeWatch.app/PokeWatch"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+    dependencies:
+      - target: PokeWatch
+
+schemes:
+  PokeWatch:
+    build:
+      targets:
+        PokeWatch: all
+        PokeWatchTests: [test]
+    test:
+      targets:
+        - PokeWatchTests
+      gatherCoverageData: true
+    run:
+      config: Debug
+  PokeWatchWidgets:
+    build:
+      targets:
+        PokeWatchWidgets: all
+        PokeWatch: all
+    run:
+      config: Debug

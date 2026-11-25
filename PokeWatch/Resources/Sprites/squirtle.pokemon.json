@@ -1,0 +1,33 @@
+{
+  "id": "squirtle", "name": "Squirtle", "dexNumber": 7, "category": "Tiny Turtle", "type": "Water",
+  "entry": "Blows bubbles when it is pleased. Hides in its shell when the battery is nearly empty.",
+  "element": "bubble", "accentHex": "#5CC8F0",
+  "palette": { "K": "#173C5A", "S": "#6CC4E8", "s": "#4598C0", "H": "#B8743A", "h": "#8A5426", "C": "#F3DD9E", "E": "#3A1A0A", "W": "#FFFFFF" },
+  "eyes": { "keys": ["E", "W"], "fill": "S", "line": "K" },
+  "earRows": 0,
+  "personality": { "idleStyle": "bounce", "energy": 0.7, "sleepiness": 0.4, "bobSpeed": 1.8, "bobAmplitude": 0.8,
+    "blinkInterval": 3.6, "hopHeight": 3, "nightOwl": false, "sleepsWhenIdle": false, "stepLover": true },
+  "lines": { "idle": "Squirt?", "happy": "Squirtle!", "excited": "Squirt-squirt!", "celebrate": "SQUIRTLE!", "tired": "squirt...", "charging": "Blub", "sleep": "zzz", "wake": "Squirt!" },
+  "sprite": [
+    ".....KKKKKKKK.......",
+    "...KKSSSSSSSSKK.....",
+    "..KSSSSSSSSSSSSK....",
+    ".KSSSSSSSSSSSSSSK...",
+    ".KSSSWWSSSSSWWSSK...",
+    ".KSSSWEESSSSWEESK...",
+    ".KSSSWEESSSSWEESK...",
+    ".KSSSSSSSSSSSSSSK...",
+    "..KSSSSKKKKSSSSK....",
+    "...KKSSSSSSSSKK.....",
+    "..KSKHHHHHHHHKSK....",
+    ".KSSKHCCCCCCHKSSK...",
+    ".KSKHCCCCCCCCHKSK.KK",
+    "..KKHCCCCCCCCHKKKSSK",
+    "...KHCCCCCCCCHKSSSK.",
+    "...KhHCCCCCCHhKSSK..",
+    "....KHHHHHHHHKKK....",
+    "...KSSKKKKKKSSK.....",
+    "...KSSK....KSSK.....",
+    "...KKKK....KKKK....."
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "id": "charmander", "name": "Charmander", "dexNumber": 4, "category": "Lizard", "type": "Fire",
+  "entry": "Its tail flame burns brighter as your active energy climbs. Sulks a little when the battery runs low.",
+  "element": "ember", "accentHex": "#FF8A3D",
+  "palette": { "K": "#5A2410", "O": "#F38A3A", "o": "#C8642A", "C": "#FAD98E", "F": "#FF4A1C", "f": "#FFD23A", "E": "#1E0E06", "W": "#FFFFFF" },
+  "eyes": { "keys": ["E", "W"], "fill": "O", "line": "K" },
+  "earRows": 0,
+  "personality": { "idleStyle": "waddle", "energy": 0.8, "sleepiness": 0.4, "bobSpeed": 2.0, "bobAmplitude": 0.8,
+    "blinkInterval": 3.4, "hopHeight": 3, "nightOwl": false, "sleepsWhenIdle": false, "stepLover": true },
+  "lines": { "idle": "Char?", "happy": "Char!", "excited": "Char-char!", "celebrate": "CHARMANDER!", "tired": "char...", "charging": "Fwoosh", "sleep": "zzz", "wake": "Char!" },
+  "sprite": [
+    ".....KKKKKK...........",
+    "....KOOOOOOK..........",
+    "...KOOOOOOOOK.........",
+    "..KOOOOOOOWEOK........",
+    "..KOOOOOOOEEOK....F...",
+    "..KOOOOOOOEEOOK..FfF..",
+    "..KOOOOOOOOOOOK.FffF..",
+    "...KOOOOOOOOOK..FffF..",
+    "....KOOKKKKKK....FF...",
+    ".....KOOOOOOK....KK...",
+    "....KOOCCCCOOK..KOK...",
+    "...KOKCCCCCCKOKKOOK...",
+    "...KK.KCCCCCCKKOOK....",
+    "......KCCCCCCOOOK.....",
+    "......KCCCCCCOOK......",
+    ".....KOOCCCCOOK.......",
+    "....KOOOKKKKOOOK......",
+    "....KCOCK...KCOCK.....",
+    "....KKKK.....KKKK....."
+  ]
+}

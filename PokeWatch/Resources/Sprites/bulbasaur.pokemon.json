@@ -1,0 +1,32 @@
+{
+  "id": "bulbasaur", "name": "Bulbasaur", "dexNumber": 1, "category": "Seed", "type": "Grass",
+  "entry": "Soaks up the morning light and grows calm in the evening. The bulb on its back sways when it is happy.",
+  "element": "leaf", "accentHex": "#7CD67A",
+  "palette": { "K": "#163A30", "G": "#6CC7A2", "g": "#3F9A7A", "L": "#5BBE4A", "l": "#3A8C30", "E": "#B8222A", "W": "#FFFFFF", "M": "#FFFFFF" },
+  "eyes": { "keys": ["E", "W"], "fill": "G", "line": "K" },
+  "earRows": 2,
+  "personality": { "idleStyle": "sway", "energy": 0.5, "sleepiness": 0.5, "bobSpeed": 1.2, "bobAmplitude": 0.6,
+    "blinkInterval": 4.2, "hopHeight": 2, "nightOwl": false, "sleepsWhenIdle": false, "stepLover": true },
+  "lines": { "idle": "Bulba?", "happy": "Bulba!", "excited": "Bulba-saur!", "celebrate": "BULBASAUR!", "tired": "saur...", "charging": "Sunbath", "sleep": "zzz", "wake": "Bulba!" },
+  "sprite": [
+    "..........KKKKK.......",
+    "........KKLLLLLKK.....",
+    "......KKLLlLLLlLLK....",
+    ".....KLLLLlLLLlLLLK...",
+    "..K.KLLLLLLlLlLLLLLK..",
+    ".KGKKLLLLLLLLLLLLLLK..",
+    ".KGGKKLLLLLLLLLLLLK...",
+    "KGGGGGKKKKKKKKKKKGGK..",
+    "KGGGGGGGGGGGGGGGGGGK..",
+    "KGGWEGGGGGGGGWEGGGGGK.",
+    "KGGEEGGGGGGGGEEGGgGGK.",
+    "KGGGGGGGGGGGGGGGGGGGK.",
+    ".KGGGKMKKKKKKMKGGgGGK.",
+    "..KGGGKKGGGGKKGGGGGK..",
+    "...KKGGGGGGGGGGGGKK...",
+    "..KGGKgGGGGGGGGgKGGK..",
+    "..KGGKKKGGGGGGKKKGGK..",
+    "..KMKMK.KKKKKK.KMKMK..",
+    "..KKKKK........KKKKK.."
+  ]
+}
