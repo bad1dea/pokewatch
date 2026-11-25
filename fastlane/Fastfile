@@ -166,7 +166,7 @@ platform :ios do
       scheme: "PokeWatchContainer",
       configuration: "Release",
       destination: "generic/platform=iOS",
-      export_method: "app-store-connect",
+      export_method: "app-store",
       xcargs: "DEVELOPMENT_TEAM=#{team} CURRENT_PROJECT_VERSION=#{build_no}",
       export_options: {
         signingStyle: "manual",
