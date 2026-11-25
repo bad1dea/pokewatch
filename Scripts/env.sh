@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCHEME=PokeWatch
-BUNDLE_ID=ng.khuo.pokewatch
+BUNDLE_ID=ng.khuo.pokewatch.watchkitapp
 SIM_NAME="${SIM_NAME:-PokeWatch Ultra 3}"
 SIM_TYPE="${SIM_TYPE:-com.apple.CoreSimulator.SimDeviceType.Apple-Watch-Ultra-3-49mm}"
 DERIVED="${DERIVED:-$ROOT/build/DerivedData}"

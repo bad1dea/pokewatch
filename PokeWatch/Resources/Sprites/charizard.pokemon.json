@@ -1,0 +1,32 @@
+{
+  "id": "charizard",
+  "name": "Charizard",
+  "dexNumber": 6,
+  "category": "Flame",
+  "type": "Fire",
+  "entry": "Spreads its wings when you close a ring. Its tail flame flickers low when the battery does.",
+  "element": "ember",
+  "accentHex": "#FF7A2A",
+  "personality": {
+    "idleStyle": "breathe",
+    "energy": 0.85,
+    "sleepiness": 0.3,
+    "bobSpeed": 1.2,
+    "bobAmplitude": 0.6,
+    "blinkInterval": 4.0,
+    "hopHeight": 2,
+    "nightOwl": false,
+    "sleepsWhenIdle": false,
+    "stepLover": true
+  },
+  "lines": {
+    "idle": "Rawr.",
+    "happy": "Roar!",
+    "excited": "RAAAWR!",
+    "celebrate": "ROOOAR!",
+    "tired": "grr...",
+    "charging": "Fwoom",
+    "sleep": "zzz",
+    "wake": "Rawr?"
+  }
+}

@@ -11,100 +11,117 @@ struct PokedexFace: View {
 
     var body: some View {
         GeometryReader { geo in
-            let W = geo.size.width, H = geo.size.height
-            let c = ctx.character
-            let ink = ctx.dimmed ? Palette.dim : Palette.ink
-            let px: CGFloat = max(2, ((W * 0.44 - 10) / CGFloat(c.width)).rounded(.down))
-            let viewport = CGSize(width: CGFloat(c.width) * px + 10, height: CGFloat(c.height) * px + 12)
+            let f = FaceFrame(size: geo.size)
+            let rows: CGFloat = ctx.options.showActivity ? 4 : (ctx.options.showBattery ? 1 : 0)
+            let readoutTop = f.H - 14 - rows * 14
+            ZStack(alignment: .topLeading) {
+                header.offset(x: f.inset(9, 23), y: 9)
+                title(f).offset(x: 14, y: 26)
+                specimen(f, readoutTop: readoutTop).offset(x: 13, y: 60)
+                readouts(f, top: readoutTop)
+            }
+            .frame(width: f.W, height: f.H, alignment: .topLeading)
+        }
+    }
 
-            VStack(alignment: .leading, spacing: 0) {
-                // Header: lens + entry number.
-                HStack(spacing: 6) {
-                    ZStack {
-                        Circle().fill(ctx.dimmed ? Palette.faint : red)
-                        Circle().stroke(Palette.dim, lineWidth: 1)
-                        Circle().fill(.white.opacity(ctx.dimmed ? 0 : 0.7)).frame(width: 3, height: 3).offset(x: -2, y: -2)
-                    }
-                    .frame(width: 13, height: 13)
-                    Circle().fill(ctx.dimmed ? Palette.faint : Palette.electric).frame(width: 4, height: 4)
-                    Text(c.dexLabel).font(mono).foregroundStyle(ctx.dimmed ? Palette.faint : Palette.dim)
+    private var header: some View {
+        HStack(spacing: 6) {
+            ZStack {
+                Circle().fill(ctx.dimmed ? Palette.faint : red)
+                Circle().stroke(Palette.dim, lineWidth: 1)
+                Circle().fill(.white.opacity(ctx.dimmed ? 0 : 0.7)).frame(width: 3, height: 3).offset(x: -2, y: -2)
+            }
+            .frame(width: 12, height: 12)
+            Circle().fill(ctx.dimmed ? Palette.faint : Palette.electric).frame(width: 4, height: 4)
+            Text(ctx.character.dexLabel).font(mono).foregroundStyle(ctx.dimmed ? Palette.faint : Palette.dim)
+        }
+    }
+
+    private func title(_ f: FaceFrame) -> some View {
+        let c = ctx.character
+        return VStack(alignment: .leading, spacing: 0) {
+            Text(c.name.uppercased())
+                .font(.system(size: 16, weight: .bold, design: .monospaced))
+                .foregroundStyle(ctx.dimmed ? Palette.dim : Palette.ink)
+            Text("\(c.category.uppercased()) · \(c.type.uppercased())")
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .foregroundStyle(ctx.dimmed ? Palette.faint : Palette.dim)
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.6)
+        .frame(width: f.W - 28 - 70, alignment: .leading)
+    }
+
+    private func specimen(_ f: FaceFrame, readoutTop: CGFloat) -> some View {
+        let viewport = CGSize(width: f.W * 0.44, height: min(f.W * 0.4, readoutTop - 70))
+        return HStack(alignment: .center, spacing: 8) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .stroke(ctx.dimmed ? Palette.faint : red.opacity(0.85), lineWidth: 1.5)
+                ScanLines().stroke(Color.white.opacity(ctx.dimmed ? 0 : 0.05), lineWidth: 1)
+                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                if ctx.showCompanion {
+                    CompanionView(character: ctx.character, pose: ctx.pose, time: ctx.time,
+                                  box: CGSize(width: viewport.width - 8, height: viewport.height - 6),
+                                  art: ctx.art, tint: ctx.spriteTint(), particles: false, showSpeech: false,
+                                  fill: 0.92)
+                        .companionTapTarget(onTapCompanion)
                 }
-                .frame(height: 18)
+            }
+            .frame(width: viewport.width, height: viewport.height)
+            clockColumn(f)
+        }
+        .frame(width: f.W - 26)
+    }
 
-                Text(c.name.uppercased())
-                    .font(.system(size: 17, weight: .bold, design: .monospaced))
-                    .foregroundStyle(ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                Text("\(c.category.uppercased()) · \(c.type.uppercased())")
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+    private func clockColumn(_ f: FaceFrame) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(ctx.clock.hhmm)
+                .font(.system(size: min(34, f.W * 0.16), weight: .semibold, design: .monospaced))
+                .foregroundStyle(ctx.dimmed ? Palette.dim : Palette.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+            HStack(spacing: 6) {
+                if ctx.showSeconds { Text(ctx.clock.second).foregroundStyle(ctx.accent) }
+                if let p = ctx.clock.period { Text(p).foregroundStyle(Palette.dim) }
+            }
+            .font(.system(size: 12, weight: .semibold, design: .monospaced))
+            if ctx.options.showDate {
+                Text(ClockFormatter.longDate(ctx.date))
+                    .font(mono)
                     .foregroundStyle(ctx.dimmed ? Palette.faint : Palette.dim)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-
-                HStack(alignment: .center, spacing: 8) {
-                    // Specimen viewport.
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .stroke(ctx.dimmed ? Palette.faint : red.opacity(0.85), lineWidth: 1.5)
-                        ScanLines().stroke(Color.white.opacity(ctx.dimmed ? 0 : 0.05), lineWidth: 1)
-                            .clipShape(RoundedRectangle(cornerRadius: 5))
-                        if ctx.showCompanion {
-                            CompanionView(character: c, pose: ctx.pose, time: ctx.time, pixel: px,
-                                          tint: ctx.spriteTint(), particles: false, showSpeech: false)
-                                .companionTapTarget(onTapCompanion)
-                        }
-                    }
-                    .frame(width: viewport.width, height: viewport.height)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(ctx.clock.hhmm)
-                            .font(.system(size: min(36, W * 0.17), weight: .semibold, design: .monospaced))
-                            .foregroundStyle(ink)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.6)
-                        HStack(spacing: 6) {
-                            if ctx.showSeconds {
-                                Text(ctx.clock.second).foregroundStyle(ctx.accent)
-                            }
-                            if let p = ctx.clock.period { Text(p).foregroundStyle(Palette.dim) }
-                        }
-                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                        if ctx.options.showDate {
-                            Text(ClockFormatter.longDate(ctx.date))
-                                .font(mono)
-                                .foregroundStyle(ctx.dimmed ? Palette.faint : Palette.dim)
-                        }
-                        Text(ctx.mood.label.uppercased())
-                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(ctx.dimmed ? Palette.faint : ctx.accent)
-                            .padding(.top, 2)
-                    }
-                }
-                .padding(.top, 8)
-
-                Spacer(minLength: 6)
-
-                VStack(spacing: 5) {
-                    if ctx.options.showBattery {
-                        Readout(label: "BAT", value: ctx.battery.level, text: ctx.battery.percentText,
-                                color: ctx.battery.isLow ? Palette.lowRed : ctx.accent, dimmed: ctx.dimmed)
-                    }
-                    if ctx.options.showActivity {
-                        Readout(label: "STP", value: ctx.stepProgress,
-                                text: ctx.activity.steps.map { "\($0)" } ?? "--", color: ctx.accent, dimmed: ctx.dimmed)
-                        Readout(label: "CAL", value: ctx.activity.moveProgress,
-                                text: ctx.activity.activeEnergy.map { "\(Int($0))" } ?? "--", color: red, dimmed: ctx.dimmed)
-                        Readout(label: "EXR", value: ctx.activity.exerciseProgress,
-                                text: ctx.activity.exerciseMinutes.map { "\(Int($0))m" } ?? "--", color: Palette.ink, dimmed: ctx.dimmed)
-                    }
-                }
             }
-            .padding(.horizontal, 12)
-            .padding(.top, 4)
-            .padding(.bottom, 10)
-            .frame(width: W, height: H, alignment: .topLeading)
+            Text(ctx.mood.label.uppercased())
+                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                .foregroundStyle(ctx.dimmed ? Palette.faint : ctx.accent)
+                .lineLimit(1)
+                .padding(.top, 2)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func readouts(_ f: FaceFrame, top: CGFloat) -> some View {
+        let bottom = f.H - 14
+        let side = f.inset(top, bottom)
+        let a = ctx.activity
+        return VStack(spacing: 3) {
+            if ctx.options.showBattery {
+                Readout(label: "BAT", value: ctx.battery.level, text: ctx.battery.percentText,
+                        color: ctx.battery.isLow ? Palette.lowRed : ctx.accent, dimmed: ctx.dimmed)
+            }
+            if ctx.options.showActivity {
+                Readout(label: "STP", value: ctx.stepProgress, text: a.steps.map { "\($0)" } ?? "--",
+                        color: ctx.accent, dimmed: ctx.dimmed)
+                Readout(label: "CAL", value: a.moveProgress, text: a.activeEnergy.map { "\(Int($0))" } ?? "--",
+                        color: red, dimmed: ctx.dimmed)
+                Readout(label: "EXR", value: a.exerciseProgress, text: a.exerciseMinutes.map { "\(Int($0))m" } ?? "--",
+                        color: Palette.ink, dimmed: ctx.dimmed)
+            }
+        }
+        .frame(width: f.W - side * 2, height: bottom - top, alignment: .bottom)
+        .offset(x: side, y: top)
     }
 }
 
@@ -119,7 +136,7 @@ private struct Readout: View {
         HStack(spacing: 6) {
             Text(label)
                 .foregroundStyle(dimmed ? Palette.faint : Palette.dim)
-                .frame(width: 26, alignment: .leading)
+                .frame(width: 24, alignment: .leading)
             GeometryReader { g in
                 ZStack(alignment: .leading) {
                     Rectangle().fill(Palette.faint.opacity(0.7))
@@ -130,8 +147,9 @@ private struct Readout: View {
             .frame(height: 3)
             Text(text)
                 .foregroundStyle(dimmed ? Palette.dim : Palette.ink)
-                .frame(width: 44, alignment: .trailing)
+                .frame(width: 38, alignment: .trailing)
         }
+        .frame(height: 11)
         .font(.system(size: 10, weight: .medium, design: .monospaced))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(label) \(text)")

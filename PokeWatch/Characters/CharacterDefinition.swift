@@ -21,9 +21,10 @@ enum ParticleElement: String, Codable, Sendable, CaseIterable {
     }
 }
 
-/// A data-driven Pokémon companion. Every character is a `*.pokemon.json` file:
-/// pixel art as rows of palette keys plus personality parameters. Adding a character
-/// means adding a file — no Swift changes. See Documentation/ADDING_CHARACTERS.md.
+/// A data-driven Pokémon companion. Every character is a `*.pokemon.json` file with
+/// personality parameters and, optionally, fallback pixel art as rows of palette keys.
+/// The main artwork is an imported animated sprite (see `SpriteClip`). Adding a
+/// character means adding files, not Swift. See Documentation/ADDING_CHARACTERS.md.
 struct CharacterDefinition: Codable, Identifiable, Hashable, Sendable {
     struct Eyes: Codable, Hashable, Sendable {
         /// Palette keys that make up the eyes (pupil + highlight).
@@ -75,17 +76,19 @@ struct CharacterDefinition: Codable, Identifiable, Hashable, Sendable {
     var entry: String
     var element: ParticleElement
     var accentHex: String
-    var palette: [String: String]
-    var eyes: Eyes
-    var earRows: Int
+    var palette: [String: String]?
+    var eyes: Eyes?
+    var earRows: Int?
     var personality: Personality
     var lines: Lines
-    var sprite: [String]
+    /// Fallback pixel art, used when no imported animation is bundled.
+    var sprite: [String]?
     /// Optional explicit sort position in pickers.
     var order: Int?
 
-    var width: Int { sprite.map(\.count).max() ?? 0 }
-    var height: Int { sprite.count }
+    var width: Int { sprite?.map(\.count).max() ?? 0 }
+    var height: Int { sprite?.count ?? 0 }
+    var hasPixelArt: Bool { width > 0 && height > 0 && palette != nil && eyes != nil }
     var dexLabel: String { String(format: "No.%03d", dexNumber) }
 
     /// Stable per-character seed so blink timing differs between characters
@@ -101,12 +104,15 @@ extension CharacterDefinition {
         case missingEyeKey(String, String)
     }
 
+    /// Checks the fallback pixel art when present. A file without pixel art is valid;
+    /// the registry only lists it when an imported animation exists for it.
     func validate() throws {
-        guard !sprite.isEmpty, width > 0 else { throw ValidationError.emptySprite(id) }
+        guard RGB(hex: accentHex) != nil else { throw ValidationError.badColor(id, "accentHex") }
+        guard let sprite else { return }
+        guard width > 0, let palette, let eyes else { throw ValidationError.emptySprite(id) }
         for (key, hex) in palette where RGB(hex: hex) == nil {
             throw ValidationError.badColor(id, key)
         }
-        guard RGB(hex: accentHex) != nil else { throw ValidationError.badColor(id, "accentHex") }
         for row in sprite {
             for ch in row where ch != "." && palette[String(ch)] == nil {
                 throw ValidationError.unknownPaletteKey(id, String(ch))

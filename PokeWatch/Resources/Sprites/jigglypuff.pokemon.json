@@ -1,0 +1,32 @@
+{
+  "id": "jigglypuff",
+  "name": "Jigglypuff",
+  "dexNumber": 39,
+  "category": "Balloon",
+  "type": "Fairy",
+  "entry": "Sings you to sleep at night and pouts when you tap it during a song.",
+  "element": "sparkle",
+  "accentHex": "#FF9FC8",
+  "personality": {
+    "idleStyle": "wobble",
+    "energy": 0.6,
+    "sleepiness": 0.7,
+    "bobSpeed": 1.1,
+    "bobAmplitude": 0.7,
+    "blinkInterval": 3.5,
+    "hopHeight": 3,
+    "nightOwl": false,
+    "sleepsWhenIdle": false,
+    "stepLover": false
+  },
+  "lines": {
+    "idle": "Jiggly?",
+    "happy": "Puff!",
+    "excited": "Jiggly-puff!",
+    "celebrate": "JIGGLYPUFF!",
+    "tired": "puff...",
+    "charging": "La la",
+    "sleep": "zzz",
+    "wake": "Puff?"
+  }
+}

@@ -8,6 +8,10 @@ struct SettingsView: View {
         NavigationStack {
             List {
                 Section("Look") {
+                    Picker("Sprites", selection: $s.spriteStyle) {
+                        ForEach(SpriteStyle.allCases) { Text($0.title).tag($0) }
+                    }
+                    Toggle("Shiny", isOn: $s.shiny)
                     Picker("Accent", selection: $s.accent) {
                         ForEach(AccentChoice.allCases) { a in
                             HStack {

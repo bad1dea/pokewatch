@@ -47,6 +47,7 @@ struct FaceContext {
     var variant: AnimationVariant = .idle
     /// 0 when Reduce Motion is on.
     var motionScale: Double = 1
+    var art = ArtChoice()
 
     var clock: ClockParts { ClockFormatter.parts(for: date, use24h: options.use24h) }
     var accent: Color { options.accent.color }
@@ -85,6 +86,17 @@ struct FaceView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black)
+    }
+}
+
+/// Corner-safe geometry for a face of size `size` (see `ScreenShape`).
+struct FaceFrame {
+    let size: CGSize
+    var W: CGFloat { size.width }
+    var H: CGFloat { size.height }
+    /// Horizontal inset for content spanning `minY...maxY` from the top.
+    func inset(_ minY: CGFloat, _ maxY: CGFloat) -> CGFloat {
+        max(10, ScreenShape.inset(forBand: minY, maxY, screenHeight: H))
     }
 }
 

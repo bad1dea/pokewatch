@@ -90,11 +90,13 @@ final class SettingsStore {
     var useHealth: Bool { didSet { save(useHealth, .useHealth) } }
     var heartRate: Bool { didSet { save(heartRate, .heartRate) } }
     var variant: AnimationVariant { didSet { save(variant.rawValue, .variant) } }
+    var spriteStyle: SpriteStyle { didSet { save(spriteStyle.rawValue, .spriteStyle) } }
+    var shiny: Bool { didSet { save(shiny, .shiny) } }
 
     enum Key: String, CaseIterable {
         case characterID, faceStyle, accent, use24Hour, showSeconds, showDate, showBattery, showActivity,
              intensity, aodAppearance, haptics, reducedMotion, stepGoal, retroPalette, analogSeconds,
-             useHealth, heartRate, variant
+             useHealth, heartRate, variant, spriteStyle, shiny
         var name: String { "settings.\(rawValue)" }
     }
 
@@ -124,6 +126,8 @@ final class SettingsStore {
         useHealth = bool(.useHealth, true)
         heartRate = bool(.heartRate, false)
         variant = string(.variant).flatMap(AnimationVariant.init(rawValue:)) ?? .idle
+        spriteStyle = string(.spriteStyle).flatMap(SpriteStyle.init(rawValue:)) ?? .default
+        shiny = bool(.shiny, false)
     }
 
     /// False while launch-argument overrides are applied, so automation never
@@ -144,6 +148,9 @@ final class SettingsStore {
         if let p = args.pokemon { characterID = p }
         if let a = args.accent { accent = a }
         if let r = args.palette { retroPalette = r }
+        if let s = args.style { spriteStyle = s }
+        if args.shiny { shiny = true }
+        if let h = args.use24h { use24Hour = h }
     }
 
     func resetToDefaults() {
@@ -155,5 +162,6 @@ final class SettingsStore {
         aodAppearance = fresh.aodAppearance; haptics = fresh.haptics; reducedMotion = fresh.reducedMotion
         stepGoal = fresh.stepGoal; retroPalette = fresh.retroPalette; analogSeconds = fresh.analogSeconds
         useHealth = fresh.useHealth; heartRate = fresh.heartRate; variant = fresh.variant
+        spriteStyle = fresh.spriteStyle; shiny = fresh.shiny
     }
 }

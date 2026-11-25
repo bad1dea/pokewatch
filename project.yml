@@ -56,7 +56,14 @@ targets:
         excludes:
           - "Widgets/**"
           - "Tests/**"
+          - "Resources/ImportedSprites/**"
+          - "Resources/ImportedStills/**"
           - "**/*.md"
+      # Game sprites imported at build time by Scripts/import_sprites.py (never committed).
+      - path: PokeWatch/Resources/ImportedSprites
+        type: folder
+        optional: true
+        buildPhase: resources
     info:
       path: PokeWatch/App/Info.plist
       properties:
@@ -103,6 +110,10 @@ targets:
       - PokeWatch/Widgets
       - PokeWatch/Characters
       - PokeWatch/Resources/Sprites
+      - path: PokeWatch/Resources/ImportedStills
+        type: folder
+        optional: true
+        buildPhase: resources
       - PokeWatch/Core/Battery/BatterySnapshot.swift
       - PokeWatch/Core/Health/ActivitySnapshot.swift
       - PokeWatch/Core/Health/HealthQueries.swift

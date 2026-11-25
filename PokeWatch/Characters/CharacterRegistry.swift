@@ -10,14 +10,18 @@ final class CharacterRegistry: @unchecked Sendable {
 
     static let fileSuffix = ".pokemon.json"
     static let builtInOrder = ["pikachu", "eevee", "gengar", "snorlax", "charmander",
-                               "squirtle", "bulbasaur", "mew", "umbreon", "psyduck"]
+                               "squirtle", "bulbasaur", "mew", "umbreon", "psyduck",
+                               "charizard", "mewtwo", "lucario", "dragonite", "jigglypuff", "espeon"]
 
     let characters: [CharacterDefinition]
     /// Files that failed to decode or validate, for diagnostics.
     let rejected: [String]
     private let byID: [String: CharacterDefinition]
 
-    init(bundles: [Bundle] = [.main], extraDirectories: [URL] = CharacterRegistry.userDirectories) {
+    /// - Parameter hasImportedArt: whether imported sprites exist for an id. A character is listed
+    ///   when it has imported art or fallback pixel art.
+    init(bundles: [Bundle] = [.main], extraDirectories: [URL] = CharacterRegistry.userDirectories,
+         hasImportedArt: (String) -> Bool = CharacterRegistry.importedArtExists) {
         var urls: [URL] = []
         for bundle in bundles {
             urls += bundle.urls(forResourcesWithExtension: "json", subdirectory: nil) ?? []
@@ -34,6 +38,7 @@ final class CharacterRegistry: @unchecked Sendable {
         for url in urls where url.lastPathComponent.hasSuffix(Self.fileSuffix) {
             do {
                 let def = try Self.decode(try Data(contentsOf: url))
+                guard def.hasPixelArt || hasImportedArt(def.id) else { continue }
                 found[def.id] = def
             } catch {
                 rejected.append(url.lastPathComponent)
@@ -50,6 +55,14 @@ final class CharacterRegistry: @unchecked Sendable {
         let def = try JSONDecoder().decode(CharacterDefinition.self, from: data)
         try def.validate()
         return def
+    }
+
+    /// Any imported animation or still, in any style, in the main bundle.
+    static func importedArtExists(_ id: String) -> Bool {
+        SpriteStyle.allCases.contains {
+            SpriteFiles.animationDirectory(id: id, style: $0, shiny: false) != nil
+                || SpriteFiles.stillURL(id: id, style: $0, shiny: false) != nil
+        }
     }
 
     static var userDirectories: [URL] {

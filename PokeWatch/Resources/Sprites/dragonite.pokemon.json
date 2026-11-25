@@ -1,0 +1,32 @@
+{
+  "id": "dragonite",
+  "name": "Dragonite",
+  "dexNumber": 149,
+  "category": "Dragon",
+  "type": "Dragon",
+  "entry": "Gentle and patient. Naps after lunch and cheers loudly when you move.",
+  "element": "sparkle",
+  "accentHex": "#F2A44A",
+  "personality": {
+    "idleStyle": "float",
+    "energy": 0.6,
+    "sleepiness": 0.6,
+    "bobSpeed": 1.0,
+    "bobAmplitude": 0.8,
+    "blinkInterval": 4.0,
+    "hopHeight": 2,
+    "nightOwl": false,
+    "sleepsWhenIdle": false,
+    "stepLover": true
+  },
+  "lines": {
+    "idle": "Drago?",
+    "happy": "Nite!",
+    "excited": "Dragonite!",
+    "celebrate": "DRAGONITE!",
+    "tired": "nite...",
+    "charging": "Mmm",
+    "sleep": "zzz",
+    "wake": "Drago!"
+  }
+}

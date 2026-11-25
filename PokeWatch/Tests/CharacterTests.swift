@@ -2,19 +2,30 @@ import XCTest
 @testable import PokeWatch
 
 final class CharacterRegistryTests: XCTestCase {
-    func testLoadsAllTenBuiltInCharactersInOrder() {
+    func testLoadsBuiltInCharactersInOrder() {
         let registry = CharacterRegistry(bundles: [.main], extraDirectories: [])
-        XCTAssertEqual(registry.characters.map(\.id), CharacterRegistry.builtInOrder)
+        let ids = registry.characters.map(\.id)
+        // The ten with fallback pixel art are always there; the rest appear when sprites were imported.
+        XCTAssertEqual(Array(ids.prefix(10)), Array(CharacterRegistry.builtInOrder.prefix(10)))
+        XCTAssertEqual(ids, CharacterRegistry.builtInOrder.filter(ids.contains))
         XCTAssertTrue(registry.rejected.isEmpty, "Rejected: \(registry.rejected)")
+    }
+
+    func testCharactersWithoutArtAreHidden() {
+        let none = CharacterRegistry(bundles: [.main], extraDirectories: [], hasImportedArt: { _ in false })
+        XCTAssertEqual(none.characters.map(\.id), Array(CharacterRegistry.builtInOrder.prefix(10)))
+        let all = CharacterRegistry(bundles: [.main], extraDirectories: [], hasImportedArt: { _ in true })
+        XCTAssertEqual(all.characters.map(\.id), CharacterRegistry.builtInOrder)
     }
 
     func testEveryCharacterValidatesAndHasDistinctPersonality() throws {
         let chars = CharacterRegistry(bundles: [.main], extraDirectories: []).characters
         for c in chars {
             XCTAssertNoThrow(try c.validate(), c.id)
+            guard let rows = c.sprite else { continue }
             XCTAssertGreaterThan(c.width, 10, c.id)
             XCTAssertGreaterThan(c.height, 10, c.id)
-            XCTAssertEqual(Set(c.sprite.map(\.count)).count, 1, "\(c.id) rows must share a width")
+            XCTAssertEqual(Set(rows.map(\.count)).count, 1, "\(c.id) rows must share a width")
         }
         let signatures = Set(chars.map { "\($0.personality.idleStyle)-\($0.personality.bobSpeed)-\($0.element)" })
         XCTAssertEqual(signatures.count, chars.count, "Each Pokémon should move differently")
@@ -52,8 +63,9 @@ final class CharacterRegistryTests: XCTestCase {
             .replacingOccurrences(of: "\"name\": \"Eevee\"", with: "\"name\": \"Shiny Eevee\"")
         try text.write(to: dir.appendingPathComponent("shinyeevee.pokemon.json"), atomically: true, encoding: .utf8)
 
+        let base = CharacterRegistry(bundles: [.main], extraDirectories: []).characters.count
         let registry = CharacterRegistry(bundles: [.main], extraDirectories: [dir])
-        XCTAssertEqual(registry.characters.count, 11)
+        XCTAssertEqual(registry.characters.count, base + 1)
         XCTAssertEqual(registry.character("shinyeevee").name, "Shiny Eevee")
         XCTAssertEqual(registry.characters.last?.id, "shinyeevee")
     }
@@ -61,7 +73,7 @@ final class CharacterRegistryTests: XCTestCase {
     func testUnknownIDFallsBackToFirstCharacter() {
         let registry = CharacterRegistry(bundles: [.main], extraDirectories: [])
         XCTAssertEqual(registry.character("missingno").id, "pikachu")
-        XCTAssertEqual(registry.neighbour(of: "pikachu", offset: -1).id, "psyduck")
+        XCTAssertEqual(registry.neighbour(of: "pikachu", offset: -1).id, registry.characters.last?.id)
     }
 }
 
@@ -77,7 +89,7 @@ final class SpriteRasterizerTests: XCTestCase {
     func testClosedEyesRemoveEyeKeysAndLeaveALine() {
         let open = SpriteRasterizer.grid(for: pikachu, expression: .open, earTwitch: false)
         let closed = SpriteRasterizer.grid(for: pikachu, expression: .closed, earTwitch: false)
-        let eyeKeys = Set(pikachu.eyes.keys)
+        let eyeKeys = Set(pikachu.eyes!.keys)
         let openEyes = open.joined().filter { $0.map(eyeKeys.contains) ?? false }.count
         let closedEyes = closed.joined().filter { $0.map(eyeKeys.contains) ?? false }.count
         XCTAssertGreaterThan(openEyes, 0)
@@ -86,7 +98,7 @@ final class SpriteRasterizerTests: XCTestCase {
     }
 
     func testAllExpressionsDifferForEveryCharacter() {
-        for c in CharacterRegistry.shared.characters {
+        for c in CharacterRegistry.shared.characters where c.hasPixelArt {
             let grids = SpriteExpression.allCases.map { SpriteRasterizer.grid(for: c, expression: $0, earTwitch: false) }
             XCTAssertNotEqual(grids[0], grids[1], "\(c.id) blink must be visible")
             XCTAssertNotEqual(grids[1], grids[2], "\(c.id) happy must differ from closed")
@@ -96,8 +108,9 @@ final class SpriteRasterizerTests: XCTestCase {
     func testEarTwitchOnlyTouchesEarRows() {
         let base = SpriteRasterizer.grid(for: pikachu, expression: .open, earTwitch: false)
         let twitch = SpriteRasterizer.grid(for: pikachu, expression: .open, earTwitch: true)
-        XCTAssertNotEqual(Array(base.prefix(pikachu.earRows)), Array(twitch.prefix(pikachu.earRows)))
-        XCTAssertEqual(Array(base.dropFirst(pikachu.earRows)), Array(twitch.dropFirst(pikachu.earRows)))
+        let rows = pikachu.earRows ?? 0
+        XCTAssertNotEqual(Array(base.prefix(rows)), Array(twitch.prefix(rows)))
+        XCTAssertEqual(Array(base.dropFirst(rows)), Array(twitch.dropFirst(rows)))
     }
 
     func testCacheReusesImages() {
@@ -118,7 +131,7 @@ final class SpriteRasterizerTests: XCTestCase {
 
     func testShadesMapToPalette() {
         let shades = RetroPalette.classicGreen.shades
-        for key in pikachu.palette.keys {
+        for key in pikachu.palette!.keys {
             let c = SpriteRasterizer.color(for: key, in: pikachu, tint: .shades(shades))!
             XCTAssertTrue(shades.contains(c))
         }

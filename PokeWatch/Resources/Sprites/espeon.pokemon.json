@@ -1,0 +1,32 @@
+{
+  "id": "espeon",
+  "name": "Espeon",
+  "dexNumber": 196,
+  "category": "Sun",
+  "type": "Psychic",
+  "entry": "Brightest in the morning sun. Senses a goal coming before you do.",
+  "element": "psychic",
+  "accentHex": "#E7A6E8",
+  "personality": {
+    "idleStyle": "sway",
+    "energy": 0.6,
+    "sleepiness": 0.4,
+    "bobSpeed": 1.0,
+    "bobAmplitude": 0.6,
+    "blinkInterval": 5.0,
+    "hopHeight": 2,
+    "nightOwl": false,
+    "sleepsWhenIdle": false,
+    "stepLover": false
+  },
+  "lines": {
+    "idle": "Espi.",
+    "happy": "Espe!",
+    "excited": "Es-pe-on!",
+    "celebrate": "ESPEON!",
+    "tired": "espi...",
+    "charging": "Warm",
+    "sleep": "zzz",
+    "wake": "Espi?"
+  }
+}

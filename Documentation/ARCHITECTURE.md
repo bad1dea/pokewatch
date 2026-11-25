@@ -9,7 +9,8 @@ PokeWatch/
     Health/      HealthQueries (read-only, shared with widgets), HealthService, ActivitySnapshot
     Battery/     BatteryMonitor (WatchKit + Low Power Mode), BatterySnapshot
     Persistence/ SettingsStore (UserDefaults), LaunchOptions (automation switches)
-  Characters/    CharacterDefinition (JSON model), CharacterRegistry, SpriteRasterizer, MoodEngine
+  Characters/    CharacterDefinition (JSON), CharacterRegistry, SpriteStyle/SpriteClip/SpriteLibrary
+                 (imported animations), SpriteRasterizer (fallback pixel art), MoodEngine
   WatchFaces/    FaceStyle, FaceContext, FaceHost (timelines), six faces
   Components/    PixelFont, SpriteImage, CompanionView, ParticleField, PokeballBattery, activity views
   Settings/      CustomizeView (Crown pickers), SettingsView
@@ -34,7 +35,16 @@ every frame is reproducible in tests.
 
 ## Sprites
 
-Each character is a JSON file: rows of palette keys plus a palette. `SpriteRasterizer` derives the
+Imported art: `Scripts/import_sprites.py` stores each animation as one 1× sprite sheet plus a
+manifest (frame size, grid, per-frame durations). `SpriteLibrary` loads a clip on first use, cuts
+frames with `CGImage.cropping` (no copies), and keeps the three most recent clips. The largest decodes
+to about 3.5 MB. `CompanionView` picks the largest whole-device-pixel scale that fits the face's box
+(pixels stay square and crisp) and chooses the frame from time × the mood's playback rate. Playback
+rate 0 (asleep, Always-On, Reduce Motion) shows the first frame. A Pokémon missing from the chosen
+generation falls back to the next newer one, then older ones. Game Boy shades are applied to the whole
+sheet once and cached.
+
+Fallback pixel art: each character is a JSON file: rows of palette keys plus a palette. `SpriteRasterizer` derives the
 expressions (open, blink/closed, happy ^ ^, tired) from the eye pixels, applies the ear-flick, and
 applies a tint (natural, dimmed %, four-shade Game Boy palette, flat silhouette). Each combination is
 rasterized once and cached. Frames then cost a scale, rotation and offset.
@@ -45,6 +55,13 @@ rasterized once and cached. Frames then cost a scale, rotation and offset.
 step-idle time to one of: sleeping, drowsy, calm, happy, excited, celebrating, tired, charging.
 Personality fields shift the thresholds (night owl, sleepy, step lover, naps when idle). The animator
 turns the mood into motion; tap reactions and the wake-up sequence override it briefly.
+
+## Layout
+
+Faces lay out on absolute geometry against the measured screen shape (`ScreenShape`): any content near
+the top or bottom edge is inset by the corner curve at that height, and the top-right stays clear for
+the system time. `Scripts/screenshots.sh` captures every face in 12/24-hour, short/long time and date,
+and Always-On; `Scripts/check_clipping.py` compares each shot with the device mask.
 
 ## Performance and battery
 

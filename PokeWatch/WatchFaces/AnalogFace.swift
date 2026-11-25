@@ -18,8 +18,8 @@ struct AnalogFace: View {
             let minuteAngle = minute / 60 * 360
             let hourAngle = hour / 12 * 360
             let spot = Self.companionAngle(hour: hourAngle, minute: minuteAngle)
-            let px: CGFloat = max(2, (R / 34).rounded(.down))
             let spotR = R * 0.5
+            let spriteBox = CGSize(width: R * 0.72, height: R * 0.62)
             let spotPoint = CGPoint(x: center.x + CGFloat(sin(spot * .pi / 180)) * spotR,
                                     y: center.y - CGFloat(cos(spot * .pi / 180)) * spotR)
 
@@ -29,7 +29,7 @@ struct AnalogFace: View {
                     .position(center)
 
                 if ctx.showCompanion {
-                    CompanionView(character: ctx.character, pose: ctx.pose, time: ctx.time, pixel: px,
+                    CompanionView(character: ctx.character, pose: ctx.pose, time: ctx.time, box: spriteBox, art: ctx.art,
                                   tint: ctx.spriteTint(), particles: ctx.particlesEnabled && !ctx.dimmed, showSpeech: false)
                         .companionTapTarget(onTapCompanion)
                         .position(spotPoint)
@@ -50,24 +50,29 @@ struct AnalogFace: View {
                 Circle().fill(Color.black).frame(width: 10, height: 10).position(center)
                 Circle().stroke(ctx.dimmed ? Palette.dim : ctx.accent, lineWidth: 2).frame(width: 10, height: 10).position(center)
 
-                // Corners outside the dial.
+                // Corners outside the dial, inset to clear the rounded display corners.
+                let f = FaceFrame(size: geo.size)
                 if ctx.options.showDate {
                     Text(ClockFormatter.shortDate(ctx.date))
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(ctx.dimmed ? Palette.dim : ctx.accent)
-                        .position(x: 30, y: 14)
+                        .fixedSize()
+                        .frame(width: 70, alignment: .leading)
+                        .position(x: f.inset(9, 23) + 35, y: 16)
                 }
                 if ctx.options.showBattery {
                     PokeballGlyph(level: ctx.battery.level, isCharging: ctx.battery.isCharging,
-                                  accent: ctx.accent, dimmed: ctx.dimmed, size: 15)
-                        .position(x: 16, y: H - 14)
+                                  accent: ctx.accent, dimmed: ctx.dimmed, size: 14)
+                        .position(x: f.inset(H - 26, H - 12) + 7, y: H - 19)
                 }
                 if ctx.options.showActivity, let steps = ctx.activity.steps {
                     Text(steps.compactSteps)
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(ctx.dimmed ? Palette.dim : Palette.ink)
-                        .position(x: W - 26, y: H - 14)
+                        .fixedSize()
+                        .frame(width: 50, alignment: .trailing)
+                        .position(x: W - f.inset(H - 26, H - 12) - 25, y: H - 19)
                 }
             }
         }

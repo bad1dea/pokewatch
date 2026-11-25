@@ -1,12 +1,21 @@
 # Adding a Pokémon
 
-Characters are data. Add `<id>.pokemon.json` and it appears everywhere: picker, faces, complications.
+Characters are data: a `<id>.pokemon.json` file (name, personality, voice lines) plus artwork.
+Artwork is either imported sprites or fallback pixel art inside the JSON. A character with neither
+is not listed.
 
-Two ways to install a file:
+## With imported sprites (normal case)
 
-- **Bundled**: put it in `PokeWatch/Resources/Sprites/` and rebuild.
-- **Drop-in, no rebuild**: copy it into the app's `Documents/Characters/` folder (Xcode › Devices ›
-  PokéWatch › container, or `xcrun simctl get_app_container <udid> ng.khuo.pokewatch data`).
+1. Add the national dex number and id to `POKEMON` in `Scripts/import_sprites.py` and run it.
+   It fetches every generation's sprite that exists for that Pokémon.
+2. Add `PokeWatch/Resources/Sprites/<id>.pokemon.json` without `sprite`, `palette`, `eyes` or
+   `earRows` (see `charizard.pokemon.json`).
+3. Optional: add the id to `CharacterRegistry.builtInOrder` to set its place in the picker.
+
+## Without a rebuild
+
+A JSON file with fallback pixel art can be dropped in without rebuilding: copy it into the app's `Documents/Characters/` folder (Xcode › Devices ›
+  PokéWatch › container, or `xcrun simctl get_app_container <udid> ng.khuo.pokewatch.watchkitapp data`).
   A drop-in file with the same `id` as a bundled one replaces it.
 
 Invalid files are skipped (see `CharacterRegistry.rejected`) and never crash the app.

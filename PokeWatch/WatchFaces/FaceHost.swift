@@ -61,10 +61,12 @@ extension AppModel {
         let baseMood = mood(now: realDate)
         let mood: Mood = dimmed || (style == .sleeping && launch.mood == nil) ? .sleeping : baseMood
         let t = realDate.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 86_400)
+        let art = ArtChoice(style: style == .yellow ? .gen1 : settings.spriteStyle, shiny: settings.shiny)
+        let clip = SpriteLibrary.shared.clip(for: c.id, style: art.style, shiny: art.shiny)
         let input = AnimationInput(time: t, mood: mood, variant: settings.variant, motionScale: policy.motionScale,
                                    wakeElapsed: wakeStart.map { realDate.timeIntervalSince($0) },
                                    reactionElapsed: reactionStart.map { realDate.timeIntervalSince($0) },
-                                   dimmed: dimmed)
+                                   dimmed: dimmed, animatedArt: clip.map { !$0.isStill } ?? false)
         let options = FaceOptions(use24h: settings.use24Hour, showSeconds: settings.showSeconds,
                                   showDate: settings.showDate, showBattery: settings.showBattery,
                                   showActivity: settings.showActivity && settings.useHealth,
@@ -75,7 +77,7 @@ extension AppModel {
                            pose: CompanionAnimator.pose(c, input), mood: mood, battery: battery.snapshot,
                            activity: health.snapshot, options: options,
                            particlesEnabled: policy.particlesEnabled, variant: settings.variant,
-                           motionScale: policy.motionScale)
+                           motionScale: policy.motionScale, art: art)
     }
 }
 

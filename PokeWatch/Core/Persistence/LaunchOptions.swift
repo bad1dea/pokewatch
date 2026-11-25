@@ -11,6 +11,10 @@ import Foundation
 ///   --mood <mood>       force a mood (sleeping, happy, celebrating, tired, …)
 ///   --time HH:MM        freeze the displayed clock
 ///   --settings          open customization on launch
+///   --style <style>     gen1 | gen2 | gen3 | gen4 | gen5 | modern
+///   --shiny             shiny sprites
+///   --24h / --12h       clock format
+///   --date YYYY-MM-DD   freeze the displayed date (with --time, for layout tests)
 struct LaunchOptions: Sendable {
     var demo = false
     var face: FaceStyle?
@@ -21,6 +25,10 @@ struct LaunchOptions: Sendable {
     var mood: Mood?
     var frozenTime: DateComponents?
     var openSettings = false
+    var style: SpriteStyle?
+    var shiny = false
+    var use24h: Bool?
+    var frozenDate: DateComponents?
 
     static let current = LaunchOptions(arguments: ProcessInfo.processInfo.arguments)
 
@@ -31,6 +39,15 @@ struct LaunchOptions: Sendable {
             case "--demo": demo = true
             case "--dimmed": forceDimmed = true
             case "--settings": openSettings = true
+            case "--shiny": shiny = true
+            case "--24h": use24h = true
+            case "--12h": use24h = false
+            case "--style": style = it.next().flatMap(SpriteStyle.init(rawValue:))
+            case "--date":
+                if let v = it.next() {
+                    let p = v.split(separator: "-").compactMap { Int($0) }
+                    if p.count == 3 { frozenDate = DateComponents(year: p[0], month: p[1], day: p[2]) }
+                }
             case "--face": face = it.next().flatMap(FaceStyle.init(rawValue:))
             case "--pokemon": pokemon = it.next()
             case "--accent": accent = it.next().flatMap(AccentChoice.init(rawValue:))
@@ -49,9 +66,10 @@ struct LaunchOptions: Sendable {
     }
 
     func displayDate(_ real: Date, calendar: Calendar = .current) -> Date {
-        guard let f = frozenTime else { return real }
-        var c = calendar.dateComponents([.year, .month, .day], from: real)
-        c.hour = f.hour; c.minute = f.minute
+        guard frozenTime != nil || frozenDate != nil else { return real }
+        var c = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: real)
+        if let d = frozenDate { c.year = d.year; c.month = d.month; c.day = d.day }
+        if let f = frozenTime { c.hour = f.hour; c.minute = f.minute }
         // Keep seconds live so animation and the second hand still move.
         c.second = calendar.component(.second, from: real)
         return calendar.date(from: c) ?? real

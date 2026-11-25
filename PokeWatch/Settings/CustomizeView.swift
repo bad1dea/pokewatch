@@ -37,9 +37,10 @@ struct CompanionPicker: View {
                     StepButton(systemImage: "chevron.left") { crown = Double(max(0, index - 1)) }
                     Spacer(minLength: 0)
                     CompanionView(character: c,
-                                  pose: CompanionAnimator.pose(c, AnimationInput(time: t, mood: .happy)),
-                                  time: t, pixel: 3, particles: true, showSpeech: false)
-                        .frame(height: 72)
+                                  pose: CompanionAnimator.pose(c, AnimationInput(time: t, mood: .happy, animatedArt: true)),
+                                  time: t, box: CGSize(width: 110, height: 84),
+                                  art: ArtChoice(style: model.settings.spriteStyle, shiny: model.settings.shiny),
+                                  particles: true, showSpeech: false)
                     Spacer(minLength: 0)
                     StepButton(systemImage: "chevron.right") { crown = Double(min(chars.count - 1, index + 1)) }
                 }
@@ -47,7 +48,7 @@ struct CompanionPicker: View {
                 Text(c.name)
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundStyle(Palette.ink)
-                Text("\(c.dexLabel) · \(c.type)")
+                Text("\(c.dexLabel) · \(model.settings.spriteStyle.shortTitle)\(model.settings.shiny ? " · Shiny" : "")")
                     .font(.system(size: 12, weight: .medium, design: .monospaced))
                     .foregroundStyle(Color(hex: c.accentHex))
                 PageDots(count: chars.count, index: index)

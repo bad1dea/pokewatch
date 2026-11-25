@@ -1,0 +1,32 @@
+{
+  "id": "mewtwo",
+  "name": "Mewtwo",
+  "dexNumber": 150,
+  "category": "Genetic",
+  "type": "Psychic",
+  "entry": "Watches the time with unsettling calm. Rarely impressed, quietly pleased by a finished goal.",
+  "element": "psychic",
+  "accentHex": "#B48CE8",
+  "personality": {
+    "idleStyle": "float",
+    "energy": 0.4,
+    "sleepiness": 0.2,
+    "bobSpeed": 0.8,
+    "bobAmplitude": 1.2,
+    "blinkInterval": 6.0,
+    "hopHeight": 1,
+    "nightOwl": true,
+    "sleepsWhenIdle": false,
+    "stepLover": false
+  },
+  "lines": {
+    "idle": "...",
+    "happy": "Acceptable.",
+    "excited": "Impressive.",
+    "celebrate": "Well done.",
+    "tired": "...",
+    "charging": "Mm.",
+    "sleep": "zzz",
+    "wake": "I see you."
+  }
+}

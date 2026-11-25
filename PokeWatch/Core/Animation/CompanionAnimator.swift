@@ -13,6 +13,8 @@ struct CompanionPose: Equatable, Sendable {
     var showsZ = false
     var particleLevel: Double = 0  // 0…1
     var speech: String?
+    /// Speed multiplier for imported animations; 0 shows the still first frame.
+    var playbackRate: Double = 1
 }
 
 struct AnimationInput: Sendable {
@@ -23,6 +25,9 @@ struct AnimationInput: Sendable {
     var wakeElapsed: TimeInterval?
     var reactionElapsed: TimeInterval?
     var dimmed = false
+    /// The art animates itself (imported GIF/APNG): body motion is toned down so it
+    /// doesn't fight the sprite's own animation.
+    var animatedArt = false
 }
 
 /// Pure function from (character, time, mood) to a pose. No timers, no state:
@@ -32,6 +37,18 @@ enum CompanionAnimator {
     static let reactionDuration: TimeInterval = 1.4
 
     static func pose(_ c: CharacterDefinition, _ i: AnimationInput) -> CompanionPose {
+        var p = basePose(c, i)
+        if i.animatedArt {
+            // Keep hops and squash; damp idle sway and bob.
+            if p.dy > -1.2 * i.motionScale { p.dy *= 0.3 }
+            p.dx *= 0.3
+            p.rotation *= 0.3
+        }
+        if i.motionScale == 0 && p.playbackRate > 0 { p.playbackRate = 0 }   // Reduce Motion: still frame
+        return p
+    }
+
+    static func basePose(_ c: CharacterDefinition, _ i: AnimationInput) -> CompanionPose {
         if i.dimmed { return restingPose() }
         if let w = i.wakeElapsed, w >= 0, w < wakeDuration { return wakePose(c, w, i.motionScale) }
         if let r = i.reactionElapsed, r >= 0, r < reactionDuration { return reactionPose(c, r, i) }
@@ -47,6 +64,7 @@ enum CompanionAnimator {
         case .tired:
             pose = idle(p.idleStyle, t, speed: p.bobSpeed * 0.5, amp: p.bobAmplitude * 0.4 * m)
             pose.expression = .tired
+            pose.playbackRate = 0.55
             pose.scaleY *= 0.96
             pose.dy += 0.5
             return pose
@@ -56,6 +74,7 @@ enum CompanionAnimator {
             pose.expression = nod > 6.5 ? .closed : .tired
             if nod > 6.5 { pose.dy += 0.6 * m }
             pose.particleLevel = 0.1
+            pose.playbackRate = nod > 6.5 ? 0 : 0.6
         case .calm:
             pose = idle(p.idleStyle, t, speed: p.bobSpeed, amp: p.bobAmplitude * m)
             pose.particleLevel = 0.25
@@ -69,6 +88,7 @@ enum CompanionAnimator {
             pose.dy -= h
             if h > 0 { pose.expression = .happy }
             pose.particleLevel = 0.7
+            pose.playbackRate = 1.4
         case .celebrating:
             pose = idle(p.idleStyle, t, speed: p.bobSpeed * 1.4, amp: p.bobAmplitude * m)
             let h = hop(t, period: 1.1, length: 0.5, height: p.hopHeight * 1.2 * m)
@@ -76,6 +96,7 @@ enum CompanionAnimator {
             pose.rotation += sin(t * 7) * 4 * m
             pose.expression = h > 0 || t.truncatingRemainder(dividingBy: 3) < 2 ? .happy : .open
             pose.particleLevel = 1
+            pose.playbackRate = 1.5
         case .charging:
             pose = idle(p.idleStyle, t, speed: p.bobSpeed, amp: p.bobAmplitude * m)
             if t.truncatingRemainder(dividingBy: 4) > 3.2 { pose.expression = .happy }
@@ -94,7 +115,7 @@ enum CompanionAnimator {
 
     /// Static pose for Always-On: eyes closed, settled lower, no movement.
     static func restingPose() -> CompanionPose {
-        CompanionPose(expression: .closed, dy: 0.5, scaleX: 1.02, scaleY: 0.95, showsZ: true)
+        CompanionPose(expression: .closed, dy: 0.5, scaleX: 1.02, scaleY: 0.95, showsZ: true, playbackRate: 0)
     }
 
     static func sleepingPose(_ c: CharacterDefinition, _ t: TimeInterval, _ m: Double) -> CompanionPose {
@@ -109,6 +130,7 @@ enum CompanionAnimator {
         pose.earTwitch = noise(slot, c.seed) > 0.55 && (t - slot * 5.5) < 0.35
         pose.showsZ = true
         pose.particleLevel = 0.3
+        pose.playbackRate = 0
         return pose
     }
 
@@ -117,10 +139,13 @@ enum CompanionAnimator {
         switch w {
         case ..<0.45:
             pose.expression = .closed
+            pose.playbackRate = 0
             let k = w / 0.45
             pose.scaleY = 0.95 + 0.11 * sin(k * .pi) * max(m, 0.3)   // stretch
             pose.scaleX = 1.02 - 0.04 * sin(k * .pi) * max(m, 0.3)
-        case ..<0.65: pose.expression = .tired
+        case ..<0.65:
+            pose.expression = .tired
+            pose.playbackRate = 0
         case ..<0.85: pose.expression = .open
         case ..<0.97: pose.expression = .closed
         default:
@@ -141,6 +166,7 @@ enum CompanionAnimator {
         if r < 0.6 { pose.scaleY = 1 + 0.06 * sin(k * .pi) * i.motionScale }
         pose.expression = (i.mood == .tired || i.mood == .sleeping) && r > 0.8 ? .tired : .happy
         pose.particleLevel = 0.9
+        pose.playbackRate = 1.5
         pose.speech = i.mood == .sleeping ? c.lines.wake : c.line(for: i.mood == .calm ? .happy : i.mood)
         return pose
     }

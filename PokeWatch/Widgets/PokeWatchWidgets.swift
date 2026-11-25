@@ -41,6 +41,15 @@ struct PokemonQuery: EntityQuery {
     }
 }
 
+enum SpriteStyleOption: String, AppEnum {
+    case gen1, gen2, gen3, gen4, gen5, modern
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Sprites"
+    static let caseDisplayRepresentations: [SpriteStyleOption: DisplayRepresentation] = [
+        .gen1: "Gen I", .gen2: "Gen II", .gen3: "Gen III", .gen4: "Gen IV", .gen5: "Gen V", .modern: "Modern",
+    ]
+    var style: SpriteStyle { SpriteStyle(rawValue: rawValue) ?? .default }
+}
+
 struct CompanionConfiguration: WidgetConfigurationIntent {
     static let title: LocalizedStringResource = "Pokémon"
     static let description = IntentDescription("Choose the Pokémon shown in this complication.")
@@ -50,6 +59,12 @@ struct CompanionConfiguration: WidgetConfigurationIntent {
 
     @Parameter(title: "Daily step goal", default: 8000, controlStyle: .field, inclusiveRange: (1000, 30000))
     var stepGoal: Int
+
+    @Parameter(title: "Sprites", default: .gen5)
+    var sprites: SpriteStyleOption
+
+    @Parameter(title: "Shiny", default: false)
+    var shiny: Bool
 
     init() {}
 
@@ -69,6 +84,7 @@ struct CompanionEntry: TimelineEntry {
     let steps: Int?
     let stepGoal: Int
     let accent: Color
+    var art = ArtChoice()
 
     var stepProgress: Double? { steps.map { min(1, Double($0) / Double(max(stepGoal, 1))) } }
 
@@ -119,7 +135,8 @@ struct CompanionProvider: AppIntentTimelineProvider {
                 stepProgress: steps.map { Double($0) / Double(goal) }))
             return CompanionEntry(date: date, character: character, mood: mood,
                                   battery: i == 0 ? battery : nil,   // never project a battery reading forward
-                                  steps: steps, stepGoal: goal, accent: Color(hex: character.accentHex))
+                                  steps: steps, stepGoal: goal, accent: Color(hex: character.accentHex),
+                                  art: ArtChoice(style: config.sprites.style, shiny: config.shiny))
         }
     }
 

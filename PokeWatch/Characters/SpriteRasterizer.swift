@@ -54,12 +54,14 @@ final class SpriteRasterizer: @unchecked Sendable {
     /// Palette-key grid after applying the expression and ear pose. `nil` = transparent.
     static func grid(for c: CharacterDefinition, expression: SpriteExpression, earTwitch: Bool) -> [[String?]] {
         let w = c.width, h = c.height
-        let src: [[String?]] = c.sprite.map { row in
+        guard let rows = c.sprite, let eyes = c.eyes else { return [] }
+        let earRows = c.earRows ?? 0
+        let src: [[String?]] = rows.map { row in
             var cells = row.map { $0 == "." ? nil : String($0) } as [String?]
             if cells.count < w { cells += Array(repeating: nil, count: w - cells.count) }
             return cells
         }
-        let eyeKeys = Set(c.eyes.keys)
+        let eyeKeys = Set(eyes.keys)
         func isEye(_ x: Int, _ y: Int) -> Bool {
             guard y >= 0, y < h, x >= 0, x < w, let k = src[y][x] else { return false }
             return eyeKeys.contains(k)
@@ -71,24 +73,24 @@ final class SpriteRasterizer: @unchecked Sendable {
                     let above = isEye(x, y - 1), below = isEye(x, y + 1)
                     switch expression {
                     case .open: break
-                    case .closed: out[y][x] = below ? c.eyes.fill : c.eyes.line
+                    case .closed: out[y][x] = below ? eyes.fill : eyes.line
                     case .happy:
                         if !above && !below && y > 0 && isEye(x - 1, y) && isEye(x + 1, y) {
                             // Single-row eye: lift the middle to make a ^ shape.
-                            out[y][x] = c.eyes.fill
-                            out[y - 1][x] = c.eyes.line
+                            out[y][x] = eyes.fill
+                            out[y - 1][x] = eyes.line
                         } else {
-                            out[y][x] = above ? c.eyes.fill : c.eyes.line
+                            out[y][x] = above ? eyes.fill : eyes.line
                         }
-                    case .tired: if !above && below { out[y][x] = c.eyes.line }
+                    case .tired: if !above && below { out[y][x] = eyes.line }
                     }
                 }
             }
         }
-        if earTwitch && c.earRows > 0 {
+        if earTwitch && earRows > 0 {
             // Flick the left ear outward by one pixel.
             let half = w / 2
-            for y in 0..<min(c.earRows, h) {
+            for y in 0..<min(earRows, h) {
                 for x in 0..<half {
                     out[y][x] = x + 1 < half ? out[y][x + 1] : nil
                 }
@@ -98,7 +100,7 @@ final class SpriteRasterizer: @unchecked Sendable {
     }
 
     static func color(for key: String, in c: CharacterDefinition, tint: SpriteTint) -> RGB? {
-        guard let hex = c.palette[key], let base = RGB(hex: hex) else { return nil }
+        guard let hex = c.palette?[key], let base = RGB(hex: hex) else { return nil }
         switch tint {
         case .natural: return base
         case .dimmed(let pct): return base.scaled(Double(pct) / 100)
@@ -115,7 +117,7 @@ final class SpriteRasterizer: @unchecked Sendable {
                           earTwitch: Bool, tint: SpriteTint) -> CGImage? {
         let g = grid(for: c, expression: expression, earTwitch: earTwitch)
         let w = c.width, h = c.height
-        guard w > 0, h > 0 else { return nil }
+        guard w > 0, h > 0, g.count == h else { return nil }
         var colors: [String: RGB] = [:]
         var bytes = [UInt8](repeating: 0, count: w * h * 4)
         for y in 0..<h {

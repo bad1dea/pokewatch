@@ -22,6 +22,12 @@ jobs:
           xcodebuild -version
           xcodebuild -showsdks | grep -i watch
       - run: brew install xcodegen
+      - name: Import sprites
+        # Game sprites are fetched at build time and never committed (see Scripts/import_sprites.py).
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet Pillow
+          "$RUNNER_TEMP/venv/bin/python" Scripts/import_sprites.py
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.4"

@@ -16,3 +16,7 @@ xcuserdata/
 .vscode/
 .idea/
 *.swp
+
+# Imported game sprites: never commit (see Scripts/import_sprites.py)
+PokeWatch/Resources/ImportedSprites/
+PokeWatch/Resources/ImportedStills/

@@ -1,29 +1,29 @@
 import SwiftUI
 
 /// 04 — Sleeping. Evening palette, the companion asleep at the bottom of the screen,
-/// breathing and flicking an ear. Designed to look almost the same in Always-On.
+/// breathing quietly. Designed to look almost the same in Always-On.
 struct SleepingFace: View {
     let ctx: FaceContext
     var onTapCompanion: () -> Void = {}
 
     var body: some View {
         GeometryReader { geo in
-            let W = geo.size.width, H = geo.size.height
+            let f = FaceFrame(size: geo.size)
             let clock = ctx.clock
             let tone = ctx.dimmed ? Palette.eveningDim : Palette.evening
-            let px = max(4, (min(W / 211, H / 257) * 5).rounded(.down))
-            let spriteW = CGFloat(ctx.character.width) * px
+            let spriteBottom = f.H - 16
+            let spriteBox = CGSize(width: f.W - 2 * f.inset(spriteBottom - 30, spriteBottom), height: f.H * 0.44)
 
             ZStack(alignment: .topLeading) {
                 Crescent()
                     .fill(ctx.dimmed ? Palette.faint : Palette.eveningDim)
-                    .frame(width: 18, height: 18)
-                    .position(x: 22, y: 22)
+                    .frame(width: 15, height: 15)
+                    .offset(x: f.inset(10, 25), y: 10)
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text(clock.hhmm)
-                            .font(.system(size: min(W * 0.24, 54), weight: .medium, design: .rounded))
+                            .font(.system(size: min(f.W * 0.23, 50), weight: .medium, design: .rounded))
                             .monospacedDigit()
                         if let p = clock.period {
                             Text(p).font(.system(size: 12, weight: .semibold, design: .rounded))
@@ -36,6 +36,8 @@ struct SleepingFace: View {
                         }
                     }
                     .foregroundStyle(tone)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                     if ctx.options.showDate {
                         Text(ClockFormatter.longDate(ctx.date))
                             .font(.system(size: 12, weight: .semibold, design: .rounded))
@@ -53,30 +55,28 @@ struct SleepingFace: View {
                                 .foregroundStyle(Palette.dim)
                         }
                     }
-                    .padding(.top, 4)
+                    .padding(.top, 3)
                     .opacity(ctx.dimmed ? 0.6 : 1)
                 }
-                .padding(.leading, 14)
-                .padding(.top, 40)
+                .frame(width: f.W - 30, alignment: .leading)
+                .offset(x: 15, y: 32)
 
                 if ctx.showCompanion {
                     VStack(spacing: 0) {
-                        CompanionView(character: ctx.character, pose: ctx.pose, time: ctx.time, pixel: px,
-                                      tint: ctx.dimmed ? .dimmed(38) : .dimmed(72),
+                        CompanionView(character: ctx.character, pose: ctx.pose, time: ctx.time, box: spriteBox,
+                                      art: ctx.art, tint: ctx.dimmed ? .dimmed(40) : .dimmed(75),
                                       particles: ctx.particlesEnabled && !ctx.dimmed,
-                                      particleColor: Color(hex: "#9AA6D6"))
+                                      particleColor: Color(hex: "#9AA6D6"), fill: 0.9)
                             .companionTapTarget(onTapCompanion)
-                        // A soft cushion line, not a card.
                         Capsule()
                             .fill(Color(hex: ctx.dimmed ? "#141824" : "#1E2436"))
-                            .frame(width: spriteW * 1.05, height: 5)
-                            .padding(.top, -2)
+                            .frame(width: spriteBox.width * 0.7, height: 4)
                     }
-                    .frame(width: W)
-                    .position(x: W / 2, y: H - CGFloat(ctx.character.height) * px / 2 - 8)
+                    .frame(width: f.W)
+                    .offset(y: spriteBottom - spriteBox.height)
                 }
             }
-            .frame(width: W, height: H)
+            .frame(width: f.W, height: f.H, alignment: .topLeading)
         }
     }
 }

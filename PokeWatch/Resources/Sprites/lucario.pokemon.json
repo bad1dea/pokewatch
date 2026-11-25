@@ -1,0 +1,32 @@
+{
+  "id": "lucario",
+  "name": "Lucario",
+  "dexNumber": 448,
+  "category": "Aura",
+  "type": "Fighting",
+  "entry": "Reads your aura through your step count. Trains harder the closer you get to your goal.",
+  "element": "sparkle",
+  "accentHex": "#4F8FE0",
+  "personality": {
+    "idleStyle": "sway",
+    "energy": 0.8,
+    "sleepiness": 0.3,
+    "bobSpeed": 1.4,
+    "bobAmplitude": 0.5,
+    "blinkInterval": 4.5,
+    "hopHeight": 3,
+    "nightOwl": false,
+    "sleepsWhenIdle": false,
+    "stepLover": true
+  },
+  "lines": {
+    "idle": "Hm.",
+    "happy": "Rio!",
+    "excited": "Lu-cario!",
+    "celebrate": "LUCARIO!",
+    "tired": "rio...",
+    "charging": "Focus.",
+    "sleep": "zzz",
+    "wake": "Ready."
+  }
+}
