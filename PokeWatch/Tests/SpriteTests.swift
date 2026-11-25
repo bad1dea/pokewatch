@@ -3,10 +3,10 @@ import XCTest
 
 final class SpriteStyleTests: XCTestCase {
     func testFallbackPrefersNewerGenerations() {
-        XCTAssertEqual(SpriteStyle.gen1.fallbackChain, [.gen1, .gen2, .gen3, .gen4, .gen5, .modern])
-        XCTAssertEqual(SpriteStyle.gen4.fallbackChain, [.gen4, .gen5, .modern, .gen3, .gen2, .gen1])
-        XCTAssertEqual(SpriteStyle.modern.fallbackChain.first, .modern)
-        XCTAssertEqual(SpriteStyle.modern.fallbackChain[1], .gen5)
+        XCTAssertEqual(SpriteStyle.gen1.fallbackChain, [.gen1, .gen2, .gen3, .gen4, .gen5, .modern, .pixel])
+        XCTAssertEqual(SpriteStyle.gen4.fallbackChain, [.gen4, .gen5, .modern, .gen3, .gen2, .gen1, .pixel])
+        XCTAssertEqual(SpriteStyle.modern.fallbackChain, [.modern, .pixel, .gen5, .gen4, .gen3, .gen2, .gen1])
+        XCTAssertEqual(SpriteStyle.pixel.fallbackChain, [.pixel, .modern, .gen5, .gen4, .gen3, .gen2, .gen1])
     }
 
     func testResolveFallsBackAcrossStylesAndShiny() {

@@ -51,10 +51,10 @@ struct PokemonQuery: EntityStringQuery {
 }
 
 enum SpriteStyleOption: String, AppEnum {
-    case gen1, gen2, gen3, gen4, gen5, modern
+    case gen1, gen2, gen3, gen4, gen5, modern, pixel
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "Sprites"
     static let caseDisplayRepresentations: [SpriteStyleOption: DisplayRepresentation] = [
-        .gen1: "Gen I", .gen2: "Gen II", .gen3: "Gen III", .gen4: "Gen IV", .gen5: "Gen V", .modern: "Modern",
+        .gen1: "Gen I", .gen2: "Gen II", .gen3: "Gen III", .gen4: "Gen IV", .gen5: "Gen V", .modern: "Modern", .pixel: "Pixel",
     ]
     var style: SpriteStyle { SpriteStyle(rawValue: rawValue) ?? .default }
 }

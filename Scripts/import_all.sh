@@ -5,7 +5,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 PY="${PYTHON:-python3}"
-"$PY" Scripts/import_sprites.py "$@"
+"$PY" Scripts/import_sprites.py --share-stills "$@"
 "$PY" Scripts/import_sprites.py --shiny --full-modern --max-mb 0 \
   --out PokeWatch/Resources/Phone/ImportedSprites --stills PokeWatch/Resources/Phone/ImportedStills "$@"
 "$PY" Scripts/make_app_icon.py

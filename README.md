@@ -15,7 +15,7 @@ the repository, because they show game sprites.
   (Gengar is a night owl, Snorlax naps when your steps stall, …); the rest get motion, particles and
   temperament from their type.
 - **Era-accurate sprite styles**: Gen I Yellow (151), Gen II Crystal (251), Gen III Emerald (386),
-  Gen IV HeartGold (493), Gen V Black/White (649) and Modern/Showdown (all). A style only lists the
+  Gen IV HeartGold (493), Gen V Black/White (649), Modern/Showdown (1,011, animated) and Pixel (all 1,025, Black/White-style stills). A style only lists the
   Pokémon that existed in that generation. Animated wherever the games animated them; Gen I stills
   get motion from the companion engine. Imported at build time by `Scripts/import_sprites.py` and
   never committed (see [ASSETS.md](Documentation/ASSETS.md)). Without an import, the app falls back to

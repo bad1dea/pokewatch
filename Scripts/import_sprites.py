@@ -22,15 +22,16 @@ transfers extra packs to the watch; bundling them in the watch app would exceed 
 The sprites and catalog text belong to their rights holders. Output folders are git-ignored and
 must never be committed to the public repository; CI and TestFlight run this before building.
 
-Usage: Scripts/import_sprites.py [--ids 25 133 ...] [--styles gen1 gen5] [--shiny] [--full-modern] [--jobs 16]
+Usage: Scripts/import_sprites.py [--ids 25 133 ...] [--styles gen1 gen5 pixel] [--shiny] [--full-modern] [--jobs 16]
 """
-import argparse, csv, hashlib, io, json, math, sys, threading, time, urllib.error, urllib.request
+import argparse, csv, re, hashlib, io, json, math, sys, threading, time, urllib.error, urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
 SPRITES_URL = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon"
+SHOWDOWN_URL = "https://play.pokemonshowdown.com/sprites"
 CSV_URL = "https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv"
 # style -> (highest national dex number, normal path, shiny path or None). {n} is the dex number.
 STYLES = {
@@ -40,6 +41,8 @@ STYLES = {
     "gen4": (493, "versions/generation-iv/heartgold-soulsilver/animated/{n}.png", "versions/generation-iv/heartgold-soulsilver/animated/shiny/{n}.png"),
     "gen5": (649, "versions/generation-v/black-white/animated/{n}.gif", "versions/generation-v/black-white/animated/shiny/{n}.gif"),
     "modern": (1025, "other/showdown/{n}.gif", "other/showdown/shiny/{n}.gif"),
+    # Black/White-style pixel art for every Pokémon (fan-made past Gen V), one consistent style.
+    "pixel": (1025, SHOWDOWN_URL + "/gen5/{s}.png", SHOWDOWN_URL + "/gen5-shiny/{s}.png"),
 }
 MAX_DEX = 1025
 COLUMNS = 10
@@ -114,7 +117,7 @@ def save_png(image, path):
         image.save(path, optimize=True)
 
 
-def process(data, target, still, url, entry, style, variant, step=1):
+def process(data, target, still, url, entry, style, variant, step=1, share_still=False):
     with Image.open(io.BytesIO(data)) as im:
         frames, durations = [], []
         count = getattr(im, "n_frames", 1)
@@ -136,14 +139,22 @@ def process(data, target, still, url, entry, style, variant, step=1):
     sheet = Image.new("RGBA", (fw * cols, fh * rows), (0, 0, 0, 0))
     for i, f in enumerate(frames):
         sheet.paste(f.crop(union), ((i % cols) * fw, (i // cols) * fh))
-    save_png(sheet, target / "sheet.png")
     save_png(frames[0].crop(union), still)
+    # A one-frame sheet is the still itself; with share_still the app reads the still instead.
+    shared = share_still and len(frames) == 1
+    if shared:
+        (target / "sheet.png").unlink(missing_ok=True)
+        target.mkdir(parents=True, exist_ok=True)
+    else:
+        save_png(sheet, target / "sheet.png")
     manifest = {
         "id": entry["id"], "dexNumber": entry["dex"], "style": style, "variant": variant, "source": url,
         "sha256": hashlib.sha256(data).hexdigest(),
         "frameWidth": fw, "frameHeight": fh, "columns": cols, "frameCount": len(frames),
         "durationsMs": durations, "totalDurationMs": sum(durations),
     }
+    if shared:
+        manifest["sheet"] = "still"
     (target / "manifest.json").write_text(json.dumps(manifest, separators=(",", ":")) + "\n")
 
 
@@ -156,6 +167,8 @@ def main():
     p.add_argument("--full-modern", action="store_true", help="keep every Modern frame (too large for the watch app)")
     p.add_argument("--ids", type=int, nargs="+", help="national dex numbers (default: all)")
     p.add_argument("--styles", nargs="+", default=list(STYLES), choices=list(STYLES))
+    p.add_argument("--share-stills", action="store_true",
+                   help="don't duplicate one-frame sprites: the app reads them from ImportedStills")
     p.add_argument("--jobs", type=int, default=16)
     p.add_argument("--max-mb", type=float, default=64,
                    help="fail when sprites + stills exceed this (the watch app as a whole must stay under 75 MB)")
@@ -180,13 +193,14 @@ def main():
 
     def run(task):
         style, e, variant, path = task
-        url = f"{SPRITES_URL}/{path.format(n=e['dex'])}"
+        name = path.format(n=e["dex"], s=re.sub(r"[^a-z0-9]", "", e["id"]))
+        url = name if name.startswith("https://") else f"{SPRITES_URL}/{name}"
         ext = path.rsplit(".", 1)[1]
         try:
             data = fetch(url, a.cache / style / variant / f"{e['id']}.{ext}")
             step = 1 if a.full_modern else DECIMATE.get(style, 1)
             process(data, a.out / style / e["id"] / variant, a.stills / style / e["id"] / f"{variant}.png",
-                    url, e, style, variant, step)
+                    url, e, style, variant, step, a.share_stills)
             with lock:
                 e["styles"].setdefault(style, []).append(variant)
         except Missing:

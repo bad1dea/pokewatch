@@ -13,6 +13,8 @@ final class SpriteClip: @unchecked Sendable {
         let frameCount: Int
         let durationsMs: [Int]
         let totalDurationMs: Int
+        /// "still" when the one-frame sheet was left out in favour of the matching still.
+        var sheet: String?
     }
 
     let manifest: Manifest
@@ -32,7 +34,10 @@ final class SpriteClip: @unchecked Sendable {
               let m = try? JSONDecoder().decode(Manifest.self, from: data),
               m.frameCount > 0, m.durationsMs.count == m.frameCount, m.columns > 0,
               m.durationsMs.allSatisfy({ $0 > 0 }),
-              let sheet = SpriteFiles.loadImage(directory.appendingPathComponent("sheet.png"))
+              let sheetURL = m.sheet == "still"
+                ? SpriteFiles.stillURL(id: m.id, style: style, shiny: shiny)
+                : directory.appendingPathComponent("sheet.png"),
+              let sheet = SpriteFiles.loadImage(sheetURL)
         else { return nil }
         let frames = Self.cut(sheet, m)
         guard frames.count == m.frameCount else { return nil }

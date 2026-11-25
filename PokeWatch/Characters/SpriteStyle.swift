@@ -5,7 +5,7 @@ import ImageIO
 /// Art style for the companion: which generation's battle sprites to show.
 /// Sprites are imported at build time by `Scripts/import_sprites.py`.
 enum SpriteStyle: String, CaseIterable, Codable, Identifiable, Sendable {
-    case gen1, gen2, gen3, gen4, gen5, modern
+    case gen1, gen2, gen3, gen4, gen5, modern, pixel
     var id: String { rawValue }
 
     var title: String {
@@ -16,6 +16,7 @@ enum SpriteStyle: String, CaseIterable, Codable, Identifiable, Sendable {
         case .gen4: "Gen IV · HeartGold"
         case .gen5: "Gen V · Black/White"
         case .modern: "Modern"
+        case .pixel: "Pixel · All 1,025"
         }
     }
 
@@ -27,15 +28,19 @@ enum SpriteStyle: String, CaseIterable, Codable, Identifiable, Sendable {
         case .gen4: "Gen IV"
         case .gen5: "Gen V"
         case .modern: "Modern"
+        case .pixel: "Pixel"
         }
     }
 
     /// Styles to try when a Pokémon doesn't exist in this one: newer generations first
     /// (a Pokémon introduced later keeps a similar era look), then older ones.
     var fallbackChain: [SpriteStyle] {
-        let all = Self.allCases
-        let i = all.firstIndex(of: self)!
-        return [self] + all[(i + 1)...] + all[..<i].reversed()
+        // Pixel covers everyone, so it's the last resort for the era styles and the first
+        // stand-in for Modern (whose Gen IX gaps it fills).
+        let eras = Self.allCases.filter { $0 != .pixel }
+        guard let i = eras.firstIndex(of: self) else { return [.pixel] + eras.reversed() }
+        let chain = [self] + eras[(i + 1)...] + eras[..<i].reversed()
+        return self == .modern ? [self, .pixel] + chain.dropFirst() : chain + [.pixel]
     }
 
     static let `default`: SpriteStyle = .gen5
@@ -48,7 +53,7 @@ enum SpriteStyle: String, CaseIterable, Codable, Identifiable, Sendable {
         case .gen3: 386
         case .gen4: 493
         case .gen5: 649
-        case .modern: 1025
+        case .modern, .pixel: 1025
         }
     }
 }
