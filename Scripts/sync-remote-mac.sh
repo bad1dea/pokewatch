@@ -3,7 +3,7 @@
 #   BUILD_HOST=my-mac Scripts/sync-remote-mac.sh Scripts/test.sh
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-HOST="${BUILD_HOST:?Set BUILD_HOST to the Mac's SSH host}"
+HOST="${BUILD_HOST:?Set BUILD_HOST to the SSH host of the Mac}"
 REMOTE="${BUILD_DIR:-pokewatch}"
 rsync -a --delete --exclude .git --exclude build --exclude PokeWatch.xcodeproj --exclude Documentation/Screenshots \
   "$ROOT/" "$HOST:$REMOTE/"
