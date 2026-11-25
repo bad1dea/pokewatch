@@ -65,7 +65,6 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         WKApplication: true
         WKWatchOnly: true
-        WKCompanionAppBundleIdentifier: ng.khuo.pokewatch
         WKSupportsAlwaysOnDisplay: true
         LSApplicationCategoryType: public.app-category.lifestyle
         NSHealthShareUsageDescription: PokéWatch reads today's steps, active energy, exercise minutes and activity rings so your Pokémon can react to them. Heart rate is read only if you turn it on. Nothing leaves your watch.
